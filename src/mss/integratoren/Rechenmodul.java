@@ -89,17 +89,17 @@ public class Rechenmodul implements Observer, Observable, Runnable {
         switch (this.integrator) {
             case EULER:
                 Euler euler = (Euler)this.integratoren.get(Integratoren.EULER.ordinal());
-                Vektor2D vE = euler.getNewV(center.getCoords(), moon.getCoords(), center.getMass(), moon.getV(), this.deltaT);
+                Vektor2D vE = euler.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vE;
                 //return moon.getLabel() + Rechenmodul.ergTrenner + coordsE.getX() + Rechenmodul.ergTrenner + coordsE.getY() + Rechenmodul.ergTrenner + vE.getX() + Rechenmodul.ergTrenner + vE.getY();
             case LEAPFROG:
                 Leapfrog leapfrog = (Leapfrog)this.integratoren.get(Integratoren.LEAPFROG.ordinal());
-                Vektor2D vL = leapfrog.getNewV(center.getCoords(), moon.getCoords(), center.getMass(), moon.getV(), this.deltaT);
+                Vektor2D vL = leapfrog.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vL;
                 //return moon.getLabel() + Rechenmodul.ergTrenner + coordsL.getX() + Rechenmodul.ergTrenner + coordsL.getY() + Rechenmodul.ergTrenner + vL.getX() + Rechenmodul.ergTrenner + vL.getY();
             case RUNGE_KUTTA_KLASSISCH:
                 RungeKuttaKlassisch rungekutta = (RungeKuttaKlassisch)this.integratoren.get(Integratoren.RUNGE_KUTTA_KLASSISCH.ordinal());
-                Vektor2D vRKK = rungekutta.getNewV(center.getCoords(), moon.getCoords(), center.getMass(), moon.getV(), this.deltaT);
+                Vektor2D vRKK = rungekutta.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vRKK;
                 //return moon.getLabel() + Rechenmodul.ergTrenner + coordsRKK.getX() + Rechenmodul.ergTrenner + coordsRKK.getY() + Rechenmodul.ergTrenner + vRKK.getX() + Rechenmodul.ergTrenner + vRKK.getY();
             default:

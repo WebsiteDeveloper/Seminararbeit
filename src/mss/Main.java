@@ -27,16 +27,16 @@ public class Main implements Observer, Observable, Runnable {
         this.planets = new ArrayList<>();
         this.observers = new HashMap<>();
 
-        this.planets.add(new Planet("Sun", new Vektor2D(0, 0), 1e9, 1, new Vektor2D(0, 0)));
-        this.planets.add(new Planet("Planet", new Vektor2D(3, 3), 100, 1, new Vektor2D(-0.01, 0.01)));
-        //this.planets.add(new Planet("Planet2", new Vektor2D(-3, -3), 100, 1, new Vektor2D(0.01, -0.01)));
+        this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0)));
+        this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05)));
+        this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D()));
     }
 
     private void run(String msg) {
         this.time = this.getTime();
 
         while (true) {
-            if (this.getDelta() >= 1) {
+            if (this.getDelta() >= 0) {
                 this.sendPlanetsToObservers(this.planets);
                 this.time = this.getTime();
             }

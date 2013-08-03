@@ -21,7 +21,7 @@ public class Controller implements Runnable {
     
     public Controller() {
         this.mainHandler = new Main();
-        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.1);
+        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
         this.modul.registerObserver("main", this.mainHandler);
         this.frame = new View("MSS");
         this.frame.registerObserver("main", this.mainHandler);

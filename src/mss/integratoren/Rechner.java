@@ -27,5 +27,5 @@ public interface Rechner {
      * @param deltaT
      * @return
      */
-    public Vektor2D getNewV(Vektor2D center, Vektor2D planet, double masseCenter, Vektor2D planetV, double deltaT);
+    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, double masseCenter, double deltaT);
 }

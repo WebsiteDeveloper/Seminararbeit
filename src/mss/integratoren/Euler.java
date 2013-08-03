@@ -37,11 +37,11 @@ public class Euler implements Rechner {
      * @return
      */
     @Override
-    public Vektor2D getNewV(Vektor2D center, Vektor2D planet, double masseCenter, Vektor2D planetV, double deltaT) {
+    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, double masseCenter, double deltaT) {
         Vektor2D ortsVektor = new Vektor2D(center.getX() - planet.getX(), center.getY() - planet.getY());
         
         Vektor2D a = Util.getA(masseCenter, ortsVektor);
-        Vektor2D v = Vektor2D.add(planetV, new Vektor2D(a.getX() * deltaT, a.getY() * deltaT));
+        Vektor2D v = new Vektor2D(a.getX() * deltaT, a.getY() * deltaT);
         
         return v;
     }

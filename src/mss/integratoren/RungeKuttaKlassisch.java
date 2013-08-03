@@ -35,7 +35,7 @@ public class RungeKuttaKlassisch implements Rechner {
      * @return
      */
     @Override
-    public Vektor2D getNewV(Vektor2D center, Vektor2D planet, double masseCenter, Vektor2D planetV, double deltaT) {
+    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, double masseCenter, double deltaT) {
         double deltaT_halbe = deltaT/2.0;
         double einSechstel = 1.0 / 6.0;
         
@@ -63,6 +63,6 @@ public class RungeKuttaKlassisch implements Rechner {
         Vektor2D vTemp4 = new Vektor2D(a3.getX() * deltaT, a3.getY() * deltaT);
         
         Vektor2D v = Vektor2D.skalarMultiply(deltaT * einSechstel, Vektor2D.add(Vektor2D.add(vTemp1, Vektor2D.skalarMultiply(2, Vektor2D.add(vTemp2, vTemp3))), vTemp4));
-        return Vektor2D.add(planetV, v);
+        return v;
     }
 }
