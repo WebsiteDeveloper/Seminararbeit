@@ -4,7 +4,6 @@
  */
 package mss;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
