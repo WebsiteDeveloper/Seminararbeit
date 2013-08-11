@@ -7,6 +7,8 @@ package mss;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import mss.integratoren.Rechenmodul;
 import mss.util.Planet;
 import mss.util.Vektor2D;
@@ -22,6 +24,8 @@ public class Main implements Observer, Observable, Runnable {
     private HashMap<String, Observer> observers;
     private ArrayList<Planet> planets;
     private long time;
+    private boolean shouldRun;
+    private boolean paused;
 
     public Main() {
         this.planets = new ArrayList<>();
@@ -35,8 +39,15 @@ public class Main implements Observer, Observable, Runnable {
     private void run(String msg) {
         this.time = this.getTime();
 
+        while(!this.shouldRun) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+            }
+        }
+        
         while (true) {
-            if (this.getDelta() >= 0) {
+            if (this.getDelta() >= 0 && !this.paused) {
                 this.sendPlanetsToObservers(this.planets);
                 this.time = this.getTime();
             }
@@ -68,8 +79,12 @@ public class Main implements Observer, Observable, Runnable {
     public void notify(String msg) {
         if (msg.length() >= 9 && msg.substring(0, 9).equals("AddPlanet")) {
             this.planetAddHandler(msg);
+        } else if (msg.length() >= 7 && msg.substring(0, 7).equals("Restart")) {
+            this.paused = false;
         } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Start")) {
-            //this.run(msg);
+            this.shouldRun = true;
+        } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Pause")) {
+            this.paused = true;
         } else if (msg.contains(Rechenmodul.ergTrenner)) {
             this.parseErgs(msg);
         }
