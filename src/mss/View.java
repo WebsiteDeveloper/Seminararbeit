@@ -17,13 +17,11 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -40,7 +38,7 @@ import org.lwjgl.opengl.GL11;
  */
 public class View implements Observer, Observable, Runnable {
     private static boolean closeRequested = false;
-    private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
+    private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
     
     
     private ArrayList<Planet> planets = new ArrayList<>();
@@ -48,6 +46,7 @@ public class View implements Observer, Observable, Runnable {
     private String title;
     private final Canvas canvas = new Canvas();
     private JFrame frame;
+    private boolean isPaused = false;
     
     private JMenuBar menuBar;
     
@@ -60,7 +59,6 @@ public class View implements Observer, Observable, Runnable {
             @Override
             public void componentResized(ComponentEvent e) {
                 newCanvasSize.set(new Dimension(canvas.getSize().width, canvas.getSize().height));
-                //canvas.setBounds(200, 0, canvas.getSize().width - 200, canvas.getSize().height);
             }
         });
 
@@ -86,20 +84,53 @@ public class View implements Observer, Observable, Runnable {
         
         
         
-        JMenuItem start = new JMenuItem("Start Calculation");
+        JMenuItem start = new JMenuItem("Start Simulation");
         start.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 notifyObservers("Start");
+                isPaused = false;
             }
         });
         fileMenu.add(start);
+        
+        JMenuItem reset = new JMenuItem("Reset Simulation");
+        reset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                notifyObservers("Reset");
+                isPaused = true;
+            }
+        });
+        fileMenu.add(reset);
+        
+        JMenuItem pause = new JMenuItem("Pause");
+        pause.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(!isPaused) {
+                    notifyObservers("Pause");
+                    isPaused = true;
+                    ((JMenuItem)e.getSource()).setText("Restart");
+                } else {
+                    notifyObservers("Restart");
+                    isPaused = false;
+                    ((JMenuItem)e.getSource()).setText("Pause");
+                }
+            }
+        });
+        fileMenu.add(pause);
         
         JMenuItem about = new JMenuItem("About");
         about.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers("Pause");
+                ((JMenuItem)e.getSource()).setName("");
+                if(!isPaused) {
+                    notifyObservers("Pause");
+                    isPaused = true;
+                    ((JMenuItem)e.getSource()).setName("selfPaused");
+                }
                 showAboutDialog();
             }
         });
@@ -181,7 +212,7 @@ public class View implements Observer, Observable, Runnable {
     private void showAboutDialog() {
         JDialog dialog = new JDialog(this.frame, true);
         dialog.setSize(200, 200);
-        dialog.setLocation(this.frame.getWidth()/2 - 100, this.frame.getHeight()/2 - 100);
+        dialog.setLocation(this.frame.getX() + this.frame.getWidth()/2 - 100, this.frame.getY() + this.frame.getHeight()/2 - 100);
         dialog.setEnabled(true);
         dialog.setVisible(true);
         dialog.addWindowListener(new WindowListener() {
@@ -206,6 +237,7 @@ public class View implements Observer, Observable, Runnable {
             @Override
             public void windowDeactivated(WindowEvent e) {
                 notifyObservers("Restart");
+                isPaused = false;
                 e.getWindow().dispose();
             }
         });
@@ -260,6 +292,7 @@ public class View implements Observer, Observable, Runnable {
     @Override
     public void sendPlanets(ArrayList<Planet> planets) {
         this.planets = planets;
+        this.isPaused = false;
     }
 
     @Override

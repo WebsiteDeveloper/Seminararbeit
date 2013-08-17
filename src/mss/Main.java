@@ -7,8 +7,6 @@ package mss;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import mss.integratoren.Rechenmodul;
 import mss.util.Planet;
 import mss.util.Vektor2D;
@@ -19,13 +17,15 @@ import org.lwjgl.Sys;
  * @author Bernhard Sirlinger
  */
 public class Main implements Observer, Observable, Runnable {
-    
+
     public static boolean closed = false;
     private HashMap<String, Observer> observers;
     private ArrayList<Planet> planets;
+    private ArrayList<Planet> startPlanets;
     private long time;
     private boolean shouldRun;
     private boolean paused;
+    private boolean shouldReset = true;
 
     public Main() {
         this.planets = new ArrayList<>();
@@ -34,26 +34,39 @@ public class Main implements Observer, Observable, Runnable {
         this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0)));
         this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05)));
         this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D()));
+        this.startPlanets = (ArrayList<Planet>)this.planets.clone();
     }
 
     private void run(String msg) {
         this.time = this.getTime();
 
-        while(!this.shouldRun) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-            }
-        }
-        
-        while (true) {
-            if (this.getDelta() >= 0 && !this.paused) {
-                this.sendPlanetsToObservers(this.planets);
-                this.time = this.getTime();
+        while (this.shouldReset) {
+            this.shouldReset = false;
+            this.planets = (ArrayList<Planet>)this.startPlanets.clone();
+            this.sendPlanetsToObservers(this.planets);
+            
+            while (!this.shouldRun) {
+                if (Main.closed) {
+                    return;
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                }
             }
             
-            if(Main.closed) {
-                return;
+            while (true) {
+                if (this.getDelta() >= 1 && !this.paused) {
+                    this.sendPlanetsToObservers(this.planets);
+                    this.time = this.getTime();
+                }
+
+                if (Main.closed) {
+                    return;
+                }
+                if(this.shouldReset) {
+                    break;
+                }
             }
         }
     }
@@ -62,7 +75,7 @@ public class Main implements Observer, Observable, Runnable {
         String[] rows;
         String[] values;
         rows = ergs.split(Rechenmodul.rowTrenner);
-        System.err.println(rows.length);
+        
         for (int i = 0; i < rows.length && i < this.planets.size(); i++) {
             values = rows[i].split(Rechenmodul.ergTrenner);
             Planet temp = this.planets.get(i);
@@ -72,21 +85,24 @@ public class Main implements Observer, Observable, Runnable {
         }
     }
 
-    private void planetAddHandler(String msg) {
-    }
-
     @Override
     public void notify(String msg) {
         if (msg.length() >= 9 && msg.substring(0, 9).equals("AddPlanet")) {
-            this.planetAddHandler(msg);
         } else if (msg.length() >= 7 && msg.substring(0, 7).equals("Restart")) {
             this.paused = false;
+        } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Reset")) {
+            this.paused = true;
+            this.shouldRun = false;
+            this.shouldReset = true;
         } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Start")) {
             this.shouldRun = true;
+            this.paused = false;
+            this.shouldReset = false;
         } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Pause")) {
             this.paused = true;
         } else if (msg.contains(Rechenmodul.ergTrenner)) {
             this.parseErgs(msg);
+            return;
         }
 
         System.out.println(msg);
