@@ -14,10 +14,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,7 +32,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import mss.util.Planet;
+import mss.util.ScreenshotSaver;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 
@@ -37,24 +44,24 @@ import org.lwjgl.opengl.GL11;
  * @author Bernhard Sirlinger
  */
 public class View implements Observer, Observable, Runnable {
+
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
-    
-    
+
     private ArrayList<Planet> planets = new ArrayList<>();
     private HashMap<String, Observer> observers;
     private String title;
     private final Canvas canvas = new Canvas();
     private JFrame frame;
     private boolean isPaused = false;
-    
+
     private JMenuBar menuBar;
-    
+
     public View(String title) {
         this.observers = new HashMap<>();
         this.title = title;
         this.frame = new JFrame(title);
-        
+
         this.canvas.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -75,15 +82,13 @@ public class View implements Observer, Observable, Runnable {
                 closeRequested = true;
             }
         });
-        
+
         this.menuBar = new JMenuBar();
         this.frame.setJMenuBar(this.menuBar);
-        
+
         JMenu fileMenu = new JMenu("File");
         JMenu helpMenu = new JMenu("Help");
-        
-        
-        
+
         JMenuItem start = new JMenuItem("Start Simulation");
         start.addActionListener(new ActionListener() {
             @Override
@@ -93,7 +98,7 @@ public class View implements Observer, Observable, Runnable {
             }
         });
         fileMenu.add(start);
-        
+
         JMenuItem reset = new JMenuItem("Reset Simulation");
         reset.addActionListener(new ActionListener() {
             @Override
@@ -103,39 +108,39 @@ public class View implements Observer, Observable, Runnable {
             }
         });
         fileMenu.add(reset);
-        
+
         JMenuItem pause = new JMenuItem("Pause");
         pause.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(!isPaused) {
+                if (!isPaused) {
                     notifyObservers("Pause");
                     isPaused = true;
-                    ((JMenuItem)e.getSource()).setText("Restart");
+                    ((JMenuItem) e.getSource()).setText("Restart");
                 } else {
                     notifyObservers("Restart");
                     isPaused = false;
-                    ((JMenuItem)e.getSource()).setText("Pause");
+                    ((JMenuItem) e.getSource()).setText("Pause");
                 }
             }
         });
         fileMenu.add(pause);
-        
+
         JMenuItem about = new JMenuItem("About");
         about.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ((JMenuItem)e.getSource()).setName("");
-                if(!isPaused) {
+                ((JMenuItem) e.getSource()).setName("");
+                if (!isPaused) {
                     notifyObservers("Pause");
                     isPaused = true;
-                    ((JMenuItem)e.getSource()).setName("selfPaused");
+                    ((JMenuItem) e.getSource()).setName("selfPaused");
                 }
                 showAboutDialog();
             }
         });
         helpMenu.add(about);
-        
+
         this.menuBar.add(fileMenu);
         this.menuBar.add(helpMenu);
     }
@@ -149,6 +154,26 @@ public class View implements Observer, Observable, Runnable {
             this.frame.setPreferredSize(new Dimension(1024, 786));
             this.frame.setMinimumSize(new Dimension(800, 600));
             this.frame.pack();
+
+            this.canvas.addKeyListener(new KeyListener() {
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    System.out.println(e.getKeyCode());
+                    if (e.getKeyCode() == Keyboard.KEY_F1) {
+                    }
+                }
+
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    System.out.println(e.getKeyCode());
+                }
+
+                @Override
+                public void keyReleased(KeyEvent e) {
+                    System.out.println(e.getKeyCode());
+                }
+            });
+
             this.frame.setVisible(true);
             //Display.setDisplayMode(mode);
             Display.setTitle(this.title);
@@ -164,23 +189,24 @@ public class View implements Observer, Observable, Runnable {
             gui.applyTheme(theme);
 
             Dimension newDim;
-            
+
             this.notifyObservers("DisplayInit");
-            while (!Display.isCloseRequested() && !gameUI.quit  && !this.closeRequested) {
+            while (!Display.isCloseRequested() && !gameUI.quit && !this.closeRequested) {
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-                
+
                 newDim = newCanvasSize.getAndSet(null);
 
                 if (newDim != null) {
                     GL11.glViewport(0, 0, newDim.width, newDim.height);
                     renderer.syncViewportSize();
                 }
-                
+
                 for (int i = 0; i < this.planets.size(); i++) {
                     this.planets.get(i).draw2D();
                 }
-                
-                
+
+                checkKeyInput();
+
                 gui.update();
                 Display.update();
                 Display.sync(60);
@@ -194,6 +220,19 @@ public class View implements Observer, Observable, Runnable {
         } catch (LWJGLException | IOException e) {
             System.out.println(e.getMessage());
             System.exit(-1);
+        }
+    }
+
+    private void checkKeyInput() {
+        while(Keyboard.next()) {
+            if(!Keyboard.getEventKeyState()) {
+                switch(Keyboard.getEventKey()) {
+                    case Keyboard.KEY_F1:
+                        System.out.println("Key Pressed");
+                        this.saveScreenshot();
+                        break;
+                }
+            }
         }
     }
 
@@ -212,28 +251,34 @@ public class View implements Observer, Observable, Runnable {
     private void showAboutDialog() {
         JDialog dialog = new JDialog(this.frame, true);
         dialog.setSize(200, 200);
-        dialog.setLocation(this.frame.getX() + this.frame.getWidth()/2 - 100, this.frame.getY() + this.frame.getHeight()/2 - 100);
+        dialog.setLocation(this.frame.getX() + this.frame.getWidth() / 2 - 100, this.frame.getY() + this.frame.getHeight() / 2 - 100);
         dialog.setEnabled(true);
         dialog.setVisible(true);
         dialog.addWindowListener(new WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) {
             }
+
             @Override
             public void windowClosing(WindowEvent e) {
             }
+
             @Override
             public void windowClosed(WindowEvent e) {
             }
+
             @Override
             public void windowIconified(WindowEvent e) {
             }
+
             @Override
             public void windowDeiconified(WindowEvent e) {
             }
+
             @Override
             public void windowActivated(WindowEvent e) {
             }
+
             @Override
             public void windowDeactivated(WindowEvent e) {
                 notifyObservers("Restart");
@@ -242,11 +287,19 @@ public class View implements Observer, Observable, Runnable {
             }
         });
     }
-    
+
     private void saveScreenshot() {
-        
+        final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        GL11.glReadBuffer(GL11.GL_FRONT);
+        int width = Display.getWidth();
+        int height = Display.getHeight();
+        ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
+        GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
+        System.out.println(f.getParent());
+        ScreenshotSaver saver = new ScreenshotSaver(buffer, f.getParent(), width, height);
+        saver.start();
     }
-    
+
     public String getTitle() {
         return title;
     }
