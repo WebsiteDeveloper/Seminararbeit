@@ -228,7 +228,6 @@ public class View implements Observer, Observable, Runnable {
             if(!Keyboard.getEventKeyState()) {
                 switch(Keyboard.getEventKey()) {
                     case Keyboard.KEY_F1:
-                        System.out.println("Key Pressed");
                         this.saveScreenshot();
                         break;
                 }
@@ -295,7 +294,6 @@ public class View implements Observer, Observable, Runnable {
         int height = Display.getHeight();
         ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
         GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-        System.out.println(f.getParent());
         ScreenshotSaver saver = new ScreenshotSaver(buffer, f.getParent(), width, height);
         saver.start();
     }
