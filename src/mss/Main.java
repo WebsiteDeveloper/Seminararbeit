@@ -11,6 +11,7 @@ import mss.integratoren.Rechenmodul;
 import mss.util.Planet;
 import mss.util.Vektor2D;
 import org.lwjgl.Sys;
+import org.lwjgl.util.Color;
 
 /**
  *
@@ -31,9 +32,9 @@ public class Main implements Observer, Observable, Runnable {
         this.planets = new ArrayList<>();
         this.observers = new HashMap<>();
 
-        this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0)));
-        this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05)));
-        this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D()));
+        this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new Color(255, 255, 255)));
+        this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new Color(244, 233, 10)));
+        this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D(), new Color(255, 255, 255)));
         this.startPlanets = (ArrayList<Planet>)this.planets.clone();
     }
 
@@ -81,7 +82,7 @@ public class Main implements Observer, Observable, Runnable {
             Planet temp = this.planets.get(i);
             Vektor2D newCoords = new Vektor2D(temp.getCoords().getX() + Double.parseDouble(values[1]), temp.getCoords().getY() + Double.parseDouble(values[2]));
             Vektor2D newV = new Vektor2D(Double.parseDouble(values[3]), Double.parseDouble(values[4]));
-            this.planets.set(i, new Planet(temp.getLabel(), newCoords, temp.getMass(), temp.getRadix(), newV));
+            this.planets.set(i, new Planet(temp.getLabel(), newCoords, temp.getMass(), temp.getRadix(), newV, temp.getColor()));
         }
     }
 

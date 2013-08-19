@@ -5,6 +5,7 @@
 package mss.util;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.Color;
 
 /**
  *
@@ -17,13 +18,15 @@ public class Planet {
     private double mass;
     private double radix;
     private Vektor2D v;
+    private Color color;
 
-    public Planet(String label, Vektor2D coords, double mass, double radix, Vektor2D v) {
+    public Planet(String label, Vektor2D coords, double mass, double radix, Vektor2D v, Color color) {
         this.label = label;
         this.coords = coords;
         this.mass = mass;
         this.radix = radix;
         this.v = v;
+        this.color = color;
     }
 
     public Planet(String label, double x, double y, double mass, double radix, Vektor2D v) {
@@ -76,10 +79,14 @@ public class Planet {
 
     public void draw2D() {
         GL11.glBegin(GL11.GL_POLYGON);
-        GL11.glColor3f(1.0f, 0.2f, 0.0f);
+        GL11.glColor3f((float)(this.color.getRed()/255.0), (float)(this.color.getGreen()/255.0), (float)(this.color.getBlue()/255.0));
         for (double angle = 0; angle <= 360; angle += 1) {
             GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, this.coords.getY() + Math.cos(angle) * this.radix);
         }
         GL11.glEnd();
+    }
+
+    public Color getColor() {
+        return this.color;
     }
 }
