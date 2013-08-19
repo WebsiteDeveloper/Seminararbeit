@@ -36,6 +36,7 @@ import mss.util.ScreenshotSaver;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 
@@ -54,6 +55,7 @@ public class View implements Observer, Observable, Runnable {
     private final Canvas canvas = new Canvas();
     private JFrame frame;
     private boolean isPaused = false;
+    private int zoomLevel = 20;
 
     private JMenuBar menuBar;
 
@@ -195,7 +197,7 @@ public class View implements Observer, Observable, Runnable {
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
                 newDim = newCanvasSize.getAndSet(null);
-
+                checkKeyInput();
                 if (newDim != null) {
                     GL11.glViewport(0, 0, newDim.width, newDim.height);
                     renderer.syncViewportSize();
@@ -206,7 +208,7 @@ public class View implements Observer, Observable, Runnable {
                 }
 
                 checkKeyInput();
-
+                checkMouseInput();
                 gui.update();
                 Display.update();
                 Display.sync(60);
@@ -224,9 +226,9 @@ public class View implements Observer, Observable, Runnable {
     }
 
     private void checkKeyInput() {
-        while(Keyboard.next()) {
-            if(!Keyboard.getEventKeyState()) {
-                switch(Keyboard.getEventKey()) {
+        while (Keyboard.next()) {
+            if (!Keyboard.getEventKeyState()) {
+                switch (Keyboard.getEventKey()) {
                     case Keyboard.KEY_F1:
                         this.saveScreenshot();
                         break;
@@ -239,7 +241,7 @@ public class View implements Observer, Observable, Runnable {
         GL11.glMatrixMode(GL11.GL_PROJECTION);
 
         GL11.glLoadIdentity();
-        GL11.glOrtho(-Display.getWidth() / 20, Display.getWidth() / 20, Display.getHeight() / 20, -Display.getHeight() / 20, 1, -1);
+        GL11.glOrtho(-Display.getWidth() / this.zoomLevel, Display.getWidth() / this.zoomLevel, Display.getHeight() / this.zoomLevel, -Display.getHeight() / this.zoomLevel, 1, -1);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
         //GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -348,5 +350,22 @@ public class View implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanetsToObservers(ArrayList<Planet> planets) {
+    }
+
+    private void checkMouseInput() {
+        int delta = Mouse.getDWheel();
+        
+        if (delta > 0) {
+            setZoomFactor(this.zoomLevel + 1);
+        } else if (delta < 0){
+            setZoomFactor(this.zoomLevel - 1);
+        }
+    }
+
+    private void setZoomFactor(int value) {
+        if (value >= 1) {
+            this.zoomLevel = value;
+        }
+        this.initOpenGL();
     }
 }
