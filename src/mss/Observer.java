@@ -21,5 +21,5 @@ public interface Observer {
      *
      * @param planets
      */
-    public void sendPlanets(ArrayList<Planet> planets);
+    public void sendPlanets(String msg, ArrayList<Planet> planets);
 }

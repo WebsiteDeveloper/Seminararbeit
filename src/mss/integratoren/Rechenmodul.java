@@ -144,7 +144,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanets(ArrayList<Planet> planets) {
+    public void sendPlanets(String msg, ArrayList<Planet> planets) {
         this.rechenschritt(planets);
     }
 

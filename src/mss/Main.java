@@ -57,7 +57,8 @@ public class Main implements Observer, Observable, Runnable {
             }
             
             while (true) {
-                if (this.getDelta() >= 1 && !this.paused) {
+                long delta = this.getDelta();
+                if (delta >= 1 && !this.paused) {
                     this.sendPlanetsToObservers(this.planets);
                     this.time = this.getTime();
                 }
@@ -145,7 +146,10 @@ public class Main implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanets(ArrayList<Planet> planets) {
+    public void sendPlanets(String msg, ArrayList<Planet> planets) {
+        if("Reset".equals(msg)){
+            this.startPlanets = planets;
+        }
     }
 
     /**
@@ -158,7 +162,7 @@ public class Main implements Observer, Observable, Runnable {
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(planets);
+            ((Observer) temp).sendPlanets("Update", planets);
         }
     }
 

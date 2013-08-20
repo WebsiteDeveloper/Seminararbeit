@@ -27,12 +27,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
+import mss.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -53,11 +55,11 @@ public class View implements Observer, Observable, Runnable {
     private HashMap<String, Observer> observers;
     private String title;
     private final Canvas canvas = new Canvas();
-    private JFrame frame;
+    private final JFrame frame;
     private boolean isPaused = false;
     private int zoomLevel = 20;
 
-    private JMenuBar menuBar;
+    private final JMenuBar menuBar;
 
     public View(String title) {
         this.observers = new HashMap<>();
@@ -91,6 +93,17 @@ public class View implements Observer, Observable, Runnable {
         JMenu fileMenu = new JMenu("File");
         JMenu helpMenu = new JMenu("Help");
 
+        JMenuItem openFile = new JMenuItem("Open File");
+        openFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                notifyObservers("Pause");
+                isPaused = true;
+                openFile();
+            }
+        });
+        fileMenu.add(openFile);
+        
         JMenuItem start = new JMenuItem("Start Simulation");
         start.addActionListener(new ActionListener() {
             @Override
@@ -300,6 +313,31 @@ public class View implements Observer, Observable, Runnable {
         saver.start();
     }
 
+    @SuppressWarnings("unchecked")
+    private void openFile() {
+        final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        JFileChooser fileChooser = new JFileChooser(f.getParentFile());
+        int state = fileChooser.showOpenDialog(this.frame);
+        
+        if(state == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
+            if("".equals((String)dataFromDataFile.get("Error")) && !((ArrayList<Planet>)dataFromDataFile.get("Planets")).isEmpty()) {
+                this.sendPlanetsToObservers((ArrayList<Planet>)dataFromDataFile.get("Planets"));
+                this.notifyObservers("Reset");
+            } else {
+                this.showInvalidFileDialog((String)dataFromDataFile.get("Error"));
+            }
+        } else {
+            notifyObservers("Restart");
+            this.isPaused = false;
+        }
+    }
+    
+    private void showInvalidFileDialog(String errors) {
+        System.out.println(errors);
+    }
+    
     public String getTitle() {
         return title;
     }
@@ -343,13 +381,19 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanets(ArrayList<Planet> planets) {
+    public void sendPlanets(String msg, ArrayList<Planet> planets) {
         this.planets = planets;
         this.isPaused = false;
     }
 
     @Override
     public void sendPlanetsToObservers(ArrayList<Planet> planets) {
+        Collection<Observer> values = this.observers.values();
+        Object[] toArray = values.toArray();
+
+        for (Object temp : toArray) {
+            ((Observer) temp).sendPlanets("Reset", planets);
+        }
     }
 
     private void checkMouseInput() {
