@@ -89,4 +89,9 @@ public class Planet {
     public Color getColor() {
         return this.color;
     }
+    
+    @Override
+    public String toString() {
+        return "Planet " + this.label + " " + this.coords.getX() + " " + this.coords.getY() + " " + this.mass + " " + this.radix + " " + this.v.getX() + " " + this.v.getY() + " " + this.color.getRed() + " " + this.color.getGreen() + " " + this.color.getBlue() + "  -  " + super.toString();
+    }
 }
