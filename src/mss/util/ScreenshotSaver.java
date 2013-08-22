@@ -15,7 +15,7 @@ import javax.imageio.ImageIO;
  * @author Bernhard Sirlinger
  */
 public class ScreenshotSaver extends Thread {
-    private static int count = 1;
+    private static int count = 0;
     private final ByteBuffer buffer;
     private final String filepath;
     private final int width;
@@ -30,8 +30,9 @@ public class ScreenshotSaver extends Thread {
     
     @Override
     public void run() {
+        ScreenshotSaver.count++;
         File file = new File(this.filepath + "/" + "screenshot" + ScreenshotSaver.count + ".png"); // The file to save to.
-        String format = "PNG"; // Example: "PNG" or "JPG"
+        String format = "PNG";
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
         for(int x = 0; x < width; x++) {
@@ -46,7 +47,6 @@ public class ScreenshotSaver extends Thread {
 
         try {
             ImageIO.write(image, format, file);
-            ScreenshotSaver.count++;
         } catch (IOException e) {
             e.printStackTrace();
         }

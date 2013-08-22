@@ -46,7 +46,6 @@ public class Controller implements Runnable {
         this.threads.get("modul").start();
         this.threads.get("frame").start();
         this.threads.get("main").start();
-        Util.getDataFromDataFile(null);
     }
     
     /**

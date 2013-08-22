@@ -5,8 +5,8 @@
 package mss.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.lwjgl.util.Color;
@@ -44,13 +44,16 @@ public class Util {
     public static HashMap<String, Object> getDataFromDataFile(File file) {
         HashMap<String, Object> erg = new HashMap<>();
         ArrayList<Planet> planets = new ArrayList<>();
-        String data = null;
+        String data;
+        try {
+            data = new String(Files.readAllBytes(file.toPath()));
+        } catch (IOException ex) {
+            erg.put("Error", "The file: " + file.getAbsolutePath() + " could not be opened.");
+            return erg;
+        }
         String[] lines;
         
-        data = "deltaT 1.2\nPlanet Earth 0 0 1000000000 0.3 0.1 0 211 0 67";//   
-        
         lines = data.split("[\n]|[\r\n]|[\r]");
-        
         
         erg.put("Error", "");
         for(int i = 0; i < lines.length; i++) {
@@ -58,7 +61,7 @@ public class Util {
                 if(lines[i].trim().matches("^(deltaT) [0-9]+[\\\\.]{0,1}[0-9]*$")) {
                     String[] temp = lines[i].split(" ");
                     erg.put("deltaT", Double.parseDouble(temp[1]));
-                } else if (lines[i].trim().startsWith("Planet")) {//
+                } else if (lines[i].trim().startsWith("Body")) {//
                     String[] temp =  lines[i].split(" ");
                     planets.add(new Planet(temp[1], new Vektor2D(Double.parseDouble(temp[2]), Double.parseDouble(temp[3])), Double.parseDouble(temp[4]), Double.parseDouble(temp[5]), new Vektor2D(Double.parseDouble(temp[6]), Double.parseDouble(temp[7])), new Color(Integer.parseInt(temp[8]), Integer.parseInt(temp[9]), Integer.parseInt(temp[10]))));
                 } else {
@@ -67,10 +70,9 @@ public class Util {
             }
         }
         erg.put("Planets", planets);
-        if(planets.size() == 0) {
+        if(planets.isEmpty()) {
             erg.put("Error", erg.get("Error") + "No Planets set in the File\n");
         }
-        System.out.println(erg.get("Error"));
         return erg;
     }
 }

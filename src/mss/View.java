@@ -100,6 +100,7 @@ public class View implements Observer, Observable, Runnable {
                 notifyObservers("Pause");
                 isPaused = true;
                 openFile();
+                canvas.requestFocus();
             }
         });
         fileMenu.add(openFile);
@@ -110,6 +111,7 @@ public class View implements Observer, Observable, Runnable {
             public void actionPerformed(ActionEvent e) {
                 notifyObservers("Start");
                 isPaused = false;
+                canvas.requestFocus();
             }
         });
         fileMenu.add(start);
@@ -120,6 +122,7 @@ public class View implements Observer, Observable, Runnable {
             public void actionPerformed(ActionEvent e) {
                 notifyObservers("Reset");
                 isPaused = true;
+                canvas.requestFocus();
             }
         });
         fileMenu.add(reset);
@@ -137,6 +140,7 @@ public class View implements Observer, Observable, Runnable {
                     isPaused = false;
                     ((JMenuItem) e.getSource()).setText("Pause");
                 }
+                canvas.requestFocus();
             }
         });
         fileMenu.add(pause);
@@ -152,6 +156,7 @@ public class View implements Observer, Observable, Runnable {
                     ((JMenuItem) e.getSource()).setName("selfPaused");
                 }
                 showAboutDialog();
+                canvas.requestFocus();
             }
         });
         helpMenu.add(about);
@@ -164,33 +169,13 @@ public class View implements Observer, Observable, Runnable {
         try {
             Display.setParent(this.canvas);
             this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            //this.frame.setLayout(new BorderLayout());
             this.frame.add(canvas, BorderLayout.CENTER);
             this.frame.setPreferredSize(new Dimension(1024, 786));
             this.frame.setMinimumSize(new Dimension(800, 600));
             this.frame.pack();
 
-            this.canvas.addKeyListener(new KeyListener() {
-                @Override
-                public void keyTyped(KeyEvent e) {
-                    System.out.println(e.getKeyCode());
-                    if (e.getKeyCode() == Keyboard.KEY_F1) {
-                    }
-                }
-
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    System.out.println(e.getKeyCode());
-                }
-
-                @Override
-                public void keyReleased(KeyEvent e) {
-                    System.out.println(e.getKeyCode());
-                }
-            });
-
             this.frame.setVisible(true);
-            //Display.setDisplayMode(mode);
+
             Display.setTitle(this.title);
             Display.setResizable(true);
             Display.setFullscreen(false);
@@ -324,6 +309,7 @@ public class View implements Observer, Observable, Runnable {
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
             if("".equals((String)dataFromDataFile.get("Error")) && !((ArrayList<Planet>)dataFromDataFile.get("Planets")).isEmpty()) {
                 this.sendPlanetsToObservers((ArrayList<Planet>)dataFromDataFile.get("Planets"));
+                this.notifyObservers("DeltaChange " + dataFromDataFile.get("deltaT"));
                 this.notifyObservers("Reset");
             } else {
                 this.showInvalidFileDialog((String)dataFromDataFile.get("Error"));

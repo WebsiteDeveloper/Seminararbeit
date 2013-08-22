@@ -19,6 +19,7 @@ public interface Observer {
     public void notify(String msg);
     /**
      *
+     * @param msg
      * @param planets
      */
     public void sendPlanets(String msg, ArrayList<Planet> planets);

@@ -28,6 +28,7 @@ public class Main implements Observer, Observable, Runnable {
     private boolean paused;
     private boolean shouldReset = true;
 
+    @SuppressWarnings("unchecked")
     public Main() {
         this.planets = new ArrayList<>();
         this.observers = new HashMap<>();
@@ -38,6 +39,7 @@ public class Main implements Observer, Observable, Runnable {
         this.startPlanets = (ArrayList<Planet>)this.planets.clone();
     }
 
+    @SuppressWarnings("unchecked")
     private void run(String msg) {
         this.time = this.getTime();
 
@@ -49,6 +51,9 @@ public class Main implements Observer, Observable, Runnable {
             while (!this.shouldRun) {
                 if (Main.closed) {
                     return;
+                }
+                if(this.shouldReset) {
+                    break;
                 }
                 try {
                     Thread.sleep(100);
@@ -89,18 +94,18 @@ public class Main implements Observer, Observable, Runnable {
 
     @Override
     public void notify(String msg) {
-        if (msg.length() >= 9 && msg.substring(0, 9).equals("AddPlanet")) {
-        } else if (msg.length() >= 7 && msg.substring(0, 7).equals("Restart")) {
+        if (msg.startsWith("AddPlanet")) {
+        } else if (msg.startsWith("AddPlanet")) {
             this.paused = false;
-        } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Reset")) {
+        } else if (msg.startsWith("Reset")) {
             this.paused = true;
             this.shouldRun = false;
             this.shouldReset = true;
-        } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Start")) {
+        } else if (msg.startsWith("Start")) {
             this.shouldRun = true;
             this.paused = false;
             this.shouldReset = false;
-        } else if (msg.length() >= 5 && msg.substring(0, 5).equals("Pause")) {
+        } else if (msg.startsWith("Pause")) {
             this.paused = true;
         } else if (msg.contains(Rechenmodul.ergTrenner)) {
             this.parseErgs(msg);
@@ -116,7 +121,7 @@ public class Main implements Observer, Observable, Runnable {
 
     private long getDelta() {
         long current_time = this.getTime();
-        int delta = (int) (current_time - this.time);
+        long delta = current_time - this.time;
 
         return delta;
     }
