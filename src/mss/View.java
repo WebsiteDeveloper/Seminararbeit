@@ -240,7 +240,6 @@ public class View implements Observer, Observable, Runnable {
         GL11.glOrtho(-Display.getWidth() / this.zoomLevel, Display.getWidth() / this.zoomLevel, Display.getHeight() / this.zoomLevel, -Display.getHeight() / this.zoomLevel, 1, -1);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
-        //GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
     }

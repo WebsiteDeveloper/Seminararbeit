@@ -95,6 +95,8 @@ public class Main implements Observer, Observable, Runnable {
     @Override
     public void notify(String msg) {
         if (msg.startsWith("AddPlanet")) {
+        } else if(msg.startsWith("DeltaChange")) {
+            this.notifyObservers(msg);
         } else if (msg.startsWith("Restart")) {
             this.paused = false;
         } else if (msg.startsWith("Reset")) {

@@ -91,17 +91,14 @@ public class Rechenmodul implements Observer, Observable, Runnable {
                 Euler euler = (Euler)this.integratoren.get(Integratoren.EULER.ordinal());
                 Vektor2D vE = euler.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vE;
-                //return moon.getLabel() + Rechenmodul.ergTrenner + coordsE.getX() + Rechenmodul.ergTrenner + coordsE.getY() + Rechenmodul.ergTrenner + vE.getX() + Rechenmodul.ergTrenner + vE.getY();
             case LEAPFROG:
                 Leapfrog leapfrog = (Leapfrog)this.integratoren.get(Integratoren.LEAPFROG.ordinal());
                 Vektor2D vL = leapfrog.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vL;
-                //return moon.getLabel() + Rechenmodul.ergTrenner + coordsL.getX() + Rechenmodul.ergTrenner + coordsL.getY() + Rechenmodul.ergTrenner + vL.getX() + Rechenmodul.ergTrenner + vL.getY();
             case RUNGE_KUTTA_KLASSISCH:
                 RungeKuttaKlassisch rungekutta = (RungeKuttaKlassisch)this.integratoren.get(Integratoren.RUNGE_KUTTA_KLASSISCH.ordinal());
                 Vektor2D vRKK = rungekutta.getDeltaV(center.getCoords(), moon.getCoords(), center.getMass(), this.deltaT);
                 return vRKK;
-                //return moon.getLabel() + Rechenmodul.ergTrenner + coordsRKK.getX() + Rechenmodul.ergTrenner + coordsRKK.getY() + Rechenmodul.ergTrenner + vRKK.getX() + Rechenmodul.ergTrenner + vRKK.getY();
             default:
                 return new Vektor2D();
         }
@@ -140,7 +137,9 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     @Override
     public void notify(String msg) {
-        
+        if(msg.startsWith("DeltaChange")) {
+            this.setDeltaT(Double.parseDouble(msg.split(" ")[1]));
+        }
     }
 
     @Override
