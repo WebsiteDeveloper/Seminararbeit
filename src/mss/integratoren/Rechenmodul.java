@@ -27,7 +27,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     private double deltaT;
     
     public Rechenmodul(double deltaT) {
-        this.integrator = Integratoren.EULER;
+        this.integrator = Integratoren.RUNGE_KUTTA_KLASSISCH;
         this.deltaT = deltaT;
         this.addIntegratoren();
     }

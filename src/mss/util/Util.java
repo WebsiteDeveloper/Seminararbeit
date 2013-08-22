@@ -61,7 +61,7 @@ public class Util {
                 if(lines[i].trim().matches("^(deltaT) [0-9]+[\\\\.]{0,1}[0-9]*$")) {
                     String[] temp = lines[i].split(" ");
                     erg.put("deltaT", Double.parseDouble(temp[1]));
-                } else if (lines[i].trim().startsWith("Body")) {//
+                } else if (lines[i].trim().startsWith("Body")) {
                     String[] temp =  lines[i].split(" ");
                     planets.add(new Planet(temp[1], new Vektor2D(Double.parseDouble(temp[2]), Double.parseDouble(temp[3])), Double.parseDouble(temp[4]), Double.parseDouble(temp[5]), new Vektor2D(Double.parseDouble(temp[6]), Double.parseDouble(temp[7])), new Color(Integer.parseInt(temp[8]), Integer.parseInt(temp[9]), Integer.parseInt(temp[10]))));
                 } else {
