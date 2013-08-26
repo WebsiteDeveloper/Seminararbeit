@@ -87,6 +87,11 @@ public class Vektor2D extends Vektor {
         this.x /= betrag;
         this.y /= betrag;
     }
+
+    @Override
+    public Object clone() {
+        return new Vektor2D(this.x, this.y);
+    }
     
     /**
      *
