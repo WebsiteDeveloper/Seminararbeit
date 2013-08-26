@@ -7,7 +7,6 @@ package mss;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import mss.integratoren.Rechenmodul;
 import mss.util.Planet;
 import mss.util.Vektor2D;
 import org.lwjgl.Sys;
@@ -20,7 +19,7 @@ import org.lwjgl.util.Color;
 public class Main implements Observer, Observable, Runnable {
 
     public static boolean closed = false;
-    private HashMap<String, Observer> observers;
+    private final HashMap<String, Observer> observers;
     private ArrayList<Planet> planets;
     private ArrayList<Planet> startPlanets;
     private long time;
@@ -78,20 +77,6 @@ public class Main implements Observer, Observable, Runnable {
         }
     }
 
-    private void parseErgs(String ergs) {
-        String[] rows;
-        String[] values;
-        rows = ergs.split(Rechenmodul.rowTrenner);
-        
-        for (int i = 0; i < rows.length && i < this.planets.size(); i++) {
-            values = rows[i].split(Rechenmodul.ergTrenner);
-            Planet temp = this.planets.get(i);
-            Vektor2D newCoords = new Vektor2D(temp.getCoords().getX() + Double.parseDouble(values[1]), temp.getCoords().getY() + Double.parseDouble(values[2]));
-            Vektor2D newV = new Vektor2D(Double.parseDouble(values[3]), Double.parseDouble(values[4]));
-            this.planets.set(i, new Planet(temp.getLabel(), newCoords, temp.getMass(), temp.getRadix(), newV, temp.getColor()));
-        }
-    }
-
     @Override
     public void notify(String msg) {
         if (msg.startsWith("AddPlanet")) {
@@ -109,9 +94,6 @@ public class Main implements Observer, Observable, Runnable {
             this.shouldReset = false;
         } else if (msg.startsWith("Pause")) {
             this.paused = true;
-        } else if (msg.contains(Rechenmodul.ergTrenner)) {
-            this.parseErgs(msg);
-            return;
         }
         
         System.out.println(msg);

@@ -45,27 +45,25 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
     
     public void rechenschritt(ArrayList<Planet> planeten) {
-        String msg = "";
         int size = planeten.size();
-        ArrayList<Planet> ergs = new ArrayList<>(planeten.size());
+        ArrayList<Planet> ergs = new ArrayList<>(size);
         
         for(int i = 0; i < size; i++) {
-            Vektor2D v = planeten.get(i).getV(),
+            Planet temp = planeten.get(i);
+            Vektor2D v = temp.getV(),
                      deltaCoords;
             
             for(int j = 0; j < size; j++) {
                 if(i != j) {
-                    v = Vektor2D.add(v, this.getDeltaV(planeten.get(j), planeten.get(i)));
+                    v = Vektor2D.add(v, this.getDeltaV(planeten.get(j), temp));
                 }
             }
             
             deltaCoords = this.getDeltaCoords(v);
-            msg += planeten.get(i).getLabel() + Rechenmodul.ergTrenner + deltaCoords.getX() + Rechenmodul.ergTrenner + deltaCoords.getY() + Rechenmodul.ergTrenner + v.getX() + Rechenmodul.ergTrenner + v.getY() + Rechenmodul.rowTrenner;
+            ergs.add(new Planet(temp.getLabel(), new Vektor2D(temp.getCoords().getX() + deltaCoords.getX(), temp.getCoords().getY() + deltaCoords.getY()), temp.getMass(), temp.getRadix(), (Vektor2D)v.clone(), temp.getColor()));
         }
         
-        msg = msg.substring(0, msg.length() - Rechenmodul.rowTrenner.length());
-        
-        this.notifyObservers(msg);
+        this.sendPlanetsToObservers("Result", ergs);
     }
     
     private Vektor2D getDeltaCoords(Vektor2D v) {
@@ -153,5 +151,11 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
+        Collection<Observer> values = this.observers.values();
+        Object[] toArray = values.toArray();
+
+        for (Object temp : toArray) {
+            ((Observer) temp).sendPlanets(msg, planets);
+        }
     }
 }
