@@ -17,9 +17,6 @@ import mss.util.Vektor2D;
  * @author Admin
  */
 public class Rechenmodul implements Observer, Observable, Runnable {
-    public final static String ergTrenner = "~~";
-    public final static String rowTrenner = "--------";
-    
     private final HashMap<String, Observer> observers = new HashMap<>();
     
     private final ArrayList<Rechner> integratoren = new ArrayList<>();
