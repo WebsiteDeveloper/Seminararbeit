@@ -46,7 +46,7 @@ public class Main implements Observer, Observable, Runnable {
         while (this.shouldReset) {
             this.shouldReset = false;
             this.planets = (ArrayList<Planet>)this.startPlanets.clone();
-            this.sendPlanetsToObservers(this.planets);
+            this.sendPlanetsToObservers("Display", this.planets);
             
             while (!this.shouldRun) {
                 if (Main.closed) {
@@ -62,17 +62,17 @@ public class Main implements Observer, Observable, Runnable {
             }
             
             while (true) {
-                long delta = this.getDelta();
-                if (delta >= 1 && !this.paused) {
-                    this.sendPlanetsToObservers(this.planets);
-                    this.time = this.getTime();
-                }
-
                 if (Main.closed) {
                     return;
                 }
                 if(this.shouldReset) {
                     break;
+                }
+                
+                long delta = this.getDelta();
+                if (delta >= 1 && !this.paused) {
+                    this.sendPlanetsToObservers("Update", this.planets);
+                    this.time = this.getTime();
                 }
             }
         }
@@ -113,7 +113,7 @@ public class Main implements Observer, Observable, Runnable {
             this.parseErgs(msg);
             return;
         }
-
+        
         System.out.println(msg);
     }
 
@@ -154,22 +154,28 @@ public class Main implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanets(String msg, ArrayList<Planet> planets) {
-        if("Reset".equals(msg)){
-            this.startPlanets = planets;
+        switch (msg) {
+            case "Result":
+                this.planets = planets;
+                break;
+            case "Reset":
+                this.startPlanets = planets;
+                break;
         }
     }
 
     /**
-     *
+     * 
+     * @param msg
      * @param planets
      */
     @Override
-    public void sendPlanetsToObservers(ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets("Update", planets);
+            ((Observer) temp).sendPlanets(msg, planets);
         }
     }
 

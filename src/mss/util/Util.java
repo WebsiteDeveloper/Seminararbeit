@@ -53,8 +53,11 @@ public class Util {
         }
         String[] lines;
         
-        lines = data.split("[\n]|[\r\n]|[\r]");
-        
+        if(data.contains("\r\n")) {
+            lines = data.split("\r\n");
+        } else {
+            lines = data.split("[\n]|[\r]");
+        }
         erg.put("Error", "");
         for(int i = 0; i < lines.length; i++) {
             if(!lines[i].matches("^[ ]*$") && !lines[i].trim().startsWith("//")) {
@@ -73,6 +76,28 @@ public class Util {
         if(planets.isEmpty()) {
             erg.put("Error", erg.get("Error") + "No Planets set in the File\n");
         }
+        String collisions = Util.findCollisions(planets);
+        if(!collisions.isEmpty()) {
+            erg.put("Error", erg.get("Error") + collisions);
+        }
+        
         return erg;
+    }
+    
+    public static String findCollisions(ArrayList<Planet> planets) {
+        int size = planets.size();
+        String collisions = "";
+        
+        for(int i = 0; i < size; i++) {  
+            for(int j = 0; j < size; j++) {
+                if(i != j) {
+                    if(Planet.areColliding(planets.get(i), planets.get(j))) {
+                        collisions += "Die Planeten " + planets.get(i).getLabel() + " und " + planets.get(j).getLabel() + " kollidieren.\n";
+                    }
+                }
+            }
+        }
+        
+        return collisions;
     }
 }

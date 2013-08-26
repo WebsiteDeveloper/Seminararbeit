@@ -20,9 +20,9 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     public final static String ergTrenner = "~~";
     public final static String rowTrenner = "--------";
     
-    private HashMap<String, Observer> observers = new HashMap<>();
+    private final HashMap<String, Observer> observers = new HashMap<>();
     
-    private ArrayList<Rechner> integratoren = new ArrayList<>();
+    private final ArrayList<Rechner> integratoren = new ArrayList<>();
     private Integratoren integrator;
     private double deltaT;
     
@@ -46,12 +46,14 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     
     public void rechenschritt(ArrayList<Planet> planeten) {
         String msg = "";
+        int size = planeten.size();
+        ArrayList<Planet> ergs = new ArrayList<>(planeten.size());
         
-        for(int i = 0; i < planeten.size(); i++) {
+        for(int i = 0; i < size; i++) {
             Vektor2D v = planeten.get(i).getV(),
                      deltaCoords;
             
-            for(int j = 0; j < planeten.size(); j++) {
+            for(int j = 0; j < size; j++) {
                 if(i != j) {
                     v = Vektor2D.add(v, this.getDeltaV(planeten.get(j), planeten.get(i)));
                 }
@@ -144,10 +146,12 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanets(String msg, ArrayList<Planet> planets) {
-        this.rechenschritt(planets);
+        if(!"Display".equals(msg)) {
+            this.rechenschritt(planets);
+        }
     }
 
     @Override
-    public void sendPlanetsToObservers(ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
     }
 }

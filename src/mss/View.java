@@ -4,11 +4,10 @@
  */
 package mss;
 
-import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
-import de.matthiasmann.twl.theme.ThemeManager;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,18 +17,21 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
@@ -50,12 +52,22 @@ public class View implements Observer, Observable, Runnable {
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
 
     private ArrayList<Planet> planets = new ArrayList<>();
-    private HashMap<String, Observer> observers;
+    private final HashMap<String, Observer> observers;
     private String title;
     private final Canvas canvas = new Canvas();
     private final JFrame frame;
-    private boolean isPaused = false;
-    private int zoomLevel = 20;
+    private final JPanel panel;
+
+    /* Panel UI */
+    private final JButton addButton;
+    private final JButton deleteButton;
+    private final JTable planetsTable;
+    private final PlanetsTableModel tableModel;
+
+    private boolean isPaused = true;
+    private double zoomLevel = 1;
+    private double viewportCorrectionX = 0;
+    private double viewportCorrectionY = 0;
 
     private final JMenuBar menuBar;
 
@@ -63,11 +75,37 @@ public class View implements Observer, Observable, Runnable {
         this.observers = new HashMap<>();
         this.title = title;
         this.frame = new JFrame(title);
+        this.panel = new JPanel();
+        this.panel.setPreferredSize(new Dimension(160, 600));
+        this.panel.setBackground(Color.red);
+
+        this.addButton = new JButton("Add");
+        this.addButton.setSize(80, 40);
+        this.addButton.setFocusable(false);
+
+        this.deleteButton = new JButton("Delete");
+        this.deleteButton.setSize(80, 40);
+        this.deleteButton.setFocusable(false);
+
+        this.tableModel = new PlanetsTableModel();
+        this.planetsTable = new JTable(this.tableModel);
+        this.tableModel.changeData(planets);
+
+        this.panel.add(this.addButton);
+        this.panel.add(this.deleteButton);
+        this.panel.add(this.planetsTable);
 
         this.canvas.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 newCanvasSize.set(new Dimension(canvas.getSize().width, canvas.getSize().height));
+            }
+        });
+
+        this.frame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                layout();
             }
         });
 
@@ -102,7 +140,7 @@ public class View implements Observer, Observable, Runnable {
             }
         });
         fileMenu.add(openFile);
-        
+
         JMenuItem start = new JMenuItem("Start Simulation");
         start.addActionListener(new ActionListener() {
             @Override
@@ -163,11 +201,19 @@ public class View implements Observer, Observable, Runnable {
         this.menuBar.add(helpMenu);
     }
 
+    private void layout() {
+        this.canvas.setSize(this.frame.getWidth() - (int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
+        this.panel.setSize((int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
+    }
+
     public void init() {
         try {
             Display.setParent(this.canvas);
+            Keyboard.enableRepeatEvents(true);
             this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            this.frame.add(canvas, BorderLayout.CENTER);
+            this.frame.setLayout(new BorderLayout());
+            this.frame.add(this.canvas, BorderLayout.EAST);
+            this.frame.add(this.panel, BorderLayout.WEST);
             this.frame.setPreferredSize(new Dimension(1024, 786));
             this.frame.setMinimumSize(new Dimension(800, 600));
             this.frame.pack();
@@ -181,15 +227,15 @@ public class View implements Observer, Observable, Runnable {
             this.initOpenGL();
 
             LWJGLRenderer renderer = new LWJGLRenderer();
-            Widgets gameUI = new Widgets();
-            GUI gui = new GUI(gameUI, renderer);
-            ThemeManager theme = ThemeManager.createThemeManager(Widgets.class.getResource("chutzpah.xml"), renderer);
-            gui.applyTheme(theme);
+            //Widgets gameUI = new Widgets();
+            //GUI gui = new GUI(gameUI, renderer);
+            //ThemeManager theme = ThemeManager.createThemeManager(Widgets.class.getResource("chutzpah.xml"), renderer);
+            //gui.applyTheme(theme);
 
             Dimension newDim;
 
             this.notifyObservers("DisplayInit");
-            while (!Display.isCloseRequested() && !gameUI.quit && !this.closeRequested) {
+            while (!Display.isCloseRequested() && !this.closeRequested) {//&& !gameUI.quit
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
                 newDim = newCanvasSize.getAndSet(null);
@@ -205,17 +251,17 @@ public class View implements Observer, Observable, Runnable {
 
                 checkKeyInput();
                 checkMouseInput();
-                gui.update();
+                //gui.update();
                 Display.update();
                 Display.sync(60);
             }
 
-            gui.destroy();
-            theme.destroy();
+            //gui.destroy();
+            //theme.destroy();
             Display.destroy();
             this.frame.dispose();
             Main.closed = true;
-        } catch (LWJGLException | IOException e) {
+        } catch (LWJGLException e) {
             System.out.println(e.getMessage());
             System.exit(-1);
         }
@@ -230,6 +276,30 @@ public class View implements Observer, Observable, Runnable {
                         break;
                 }
             }
+
+            switch (Keyboard.getEventKey()) {
+                case Keyboard.KEY_UP:
+                    this.viewportCorrectionY -= (1 * 10) / this.zoomLevel;
+                    this.initOpenGL();
+                    break;
+                case Keyboard.KEY_DOWN:
+                    this.viewportCorrectionY += (1 * 10) / this.zoomLevel;
+                    this.initOpenGL();
+                    break;
+                case Keyboard.KEY_LEFT:
+                    this.viewportCorrectionX -= (1 * 10) / this.zoomLevel;
+                    this.initOpenGL();
+                    break;
+                case Keyboard.KEY_RIGHT:
+                    this.viewportCorrectionX += (1 * 10) / this.zoomLevel;
+                    this.initOpenGL();
+                    break;
+                case Keyboard.KEY_R:
+                    this.viewportCorrectionX = 0;
+                    this.viewportCorrectionY = 0;
+                    this.initOpenGL();
+                    break;
+            }
         }
     }
 
@@ -237,7 +307,7 @@ public class View implements Observer, Observable, Runnable {
         GL11.glMatrixMode(GL11.GL_PROJECTION);
 
         GL11.glLoadIdentity();
-        GL11.glOrtho(-Display.getWidth() / this.zoomLevel, Display.getWidth() / this.zoomLevel, Display.getHeight() / this.zoomLevel, -Display.getHeight() / this.zoomLevel, 1, -1);
+        GL11.glOrtho((-Display.getWidth() / this.zoomLevel) + this.viewportCorrectionX, (Display.getWidth() / this.zoomLevel) + this.viewportCorrectionX, (Display.getHeight() / this.zoomLevel) + this.viewportCorrectionY, (-Display.getHeight() / this.zoomLevel) + this.viewportCorrectionY, 1, -1);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
         GL11.glEnable(GL11.GL_BLEND);
@@ -300,27 +370,27 @@ public class View implements Observer, Observable, Runnable {
         final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
         JFileChooser fileChooser = new JFileChooser(f.getParentFile());
         int state = fileChooser.showOpenDialog(this.frame);
-        
-        if(state == JFileChooser.APPROVE_OPTION) {
+
+        if (state == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
-            if("".equals((String)dataFromDataFile.get("Error")) && !((ArrayList<Planet>)dataFromDataFile.get("Planets")).isEmpty()) {
-                this.sendPlanetsToObservers((ArrayList<Planet>)dataFromDataFile.get("Planets"));
-                this.notifyObservers("DeltaChange " + dataFromDataFile.get("deltaT"));
+            if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
                 this.notifyObservers("Reset");
+                this.sendPlanetsToObservers("Reset", (ArrayList<Planet>) dataFromDataFile.get("Planets"));
+                this.notifyObservers("DeltaChange " + dataFromDataFile.get("deltaT"));
             } else {
-                this.showInvalidFileDialog((String)dataFromDataFile.get("Error"));
+                this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
             }
         } else {
             notifyObservers("Restart");
             this.isPaused = false;
         }
     }
-    
+
     private void showInvalidFileDialog(String errors) {
         System.out.println(errors);
     }
-    
+
     public String getTitle() {
         return title;
     }
@@ -370,29 +440,59 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanetsToObservers(ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets("Reset", planets);
+            ((Observer) temp).sendPlanets(msg, planets);
         }
     }
 
     private void checkMouseInput() {
         int delta = Mouse.getDWheel();
-        
+
         if (delta > 0) {
-            setZoomFactor(this.zoomLevel + 1);
-        } else if (delta < 0){
-            setZoomFactor(this.zoomLevel - 1);
+            if (this.zoomLevel > 1) {
+                this.setZoomFactor(this.zoomLevel + 1);
+            } else {
+                this.setZoomFactor(this.zoomLevel + 0.1);
+            }
+        } else if (delta < 0) {
+            if (this.zoomLevel > 1) {
+                this.setZoomFactor(this.zoomLevel - 1);
+            } else {
+                this.setZoomFactor(this.zoomLevel - 0.1);
+            }
         }
     }
 
-    private void setZoomFactor(int value) {
-        if (value >= 1) {
+    private void setZoomFactor(double value) {
+        if (value >= 0.1) {
             this.zoomLevel = value;
         }
+
         this.initOpenGL();
+    }
+
+    private class PlanetsTableModel extends DefaultTableModel {
+
+        private static final long serialVersionUID = 1L;
+
+        public void changeData(ArrayList<Planet> planets) {
+            int rows = this.getRowCount();
+            for (int i = 0; i < rows; i++) {
+                this.removeRow(i);
+            }
+            this.fireTableRowsDeleted(0, rows);
+
+            int size = planets.size();
+            Planet[] temp = new Planet[1];
+            for (int i = 0; i < size; i++) {
+                //temp[1] = (Planet)planets.get(i).clone();
+                this.addRow(temp.clone());
+            }
+            this.fireTableRowsInserted(0, this.getRowCount());
+        }
     }
 }

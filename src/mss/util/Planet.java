@@ -81,7 +81,7 @@ public class Planet {
         GL11.glBegin(GL11.GL_POLYGON);
         GL11.glColor3f((float)(this.color.getRed()/255.0), (float)(this.color.getGreen()/255.0), (float)(this.color.getBlue()/255.0));
         for (double angle = 0; angle <= 360; angle += 1) {
-            GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, this.coords.getY() + Math.cos(angle) * this.radix);
+            GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, -this.coords.getY() + Math.cos(angle) * this.radix);
         }
         GL11.glEnd();
     }
@@ -93,5 +93,25 @@ public class Planet {
     @Override
     public String toString() {
         return "Planet " + this.label + " " + this.coords.getX() + " " + this.coords.getY() + " " + this.mass + " " + this.radix + " " + this.v.getX() + " " + this.v.getY() + " " + this.color.getRed() + " " + this.color.getGreen() + " " + this.color.getBlue() + "  -  " + super.toString();
+    }
+    
+    public static boolean areColliding(Planet planet1, Planet planet2) {
+        double x1 = planet1.getCoords().getX(),
+               y1 = planet1.getCoords().getY(),
+               x2 = planet2.getCoords().getX(),
+               y2 = planet2.getCoords().getY();
+        
+        double r1 = planet1.getRadix(),
+               r2 = planet2.getRadix();
+        /*
+        if(((x1 + r1 >= x2 - r2 && x1 + r1 <= x2 - r2) && 
+          ((y1 + r1 >= y2 - r2 && y1 + r1 <= y2 + r2) || (y1 - r1 >= y2 - r2 && y1 - r1 <= y2 + r2)))
+          ||
+          ((x1 - r1
+                )
+                
+                ))
+        */
+        return false;
     }
 }

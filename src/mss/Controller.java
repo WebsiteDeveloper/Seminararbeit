@@ -24,7 +24,6 @@ public class Controller implements Runnable {
         this.modul.registerObserver("main", this.mainHandler);
         this.frame = new View("MSS");
         this.frame.registerObserver("main", this.mainHandler);
-        //this.frame.registerObserver("modul", this.modul);
         this.mainHandler.registerObserver("view", this.frame);
         this.mainHandler.registerObserver("modul", this.modul);
         
