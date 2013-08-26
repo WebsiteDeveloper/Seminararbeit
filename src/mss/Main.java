@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import mss.util.Planet;
+import mss.util.Util;
 import mss.util.Vektor2D;
 import org.lwjgl.Sys;
 import org.lwjgl.util.Color;
@@ -139,6 +140,11 @@ public class Main implements Observer, Observable, Runnable {
         switch (msg) {
             case "Result":
                 this.planets = planets;
+                String collisions = Util.findCollisions(planets);
+                if(!collisions.isEmpty()) {
+                    System.out.println(collisions);
+                    this.paused = true;
+                }
                 break;
             case "Reset":
                 this.startPlanets = planets;

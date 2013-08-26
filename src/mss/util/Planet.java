@@ -103,15 +103,7 @@ public class Planet {
         
         double r1 = planet1.getRadix(),
                r2 = planet2.getRadix();
-        /*
-        if(((x1 + r1 >= x2 - r2 && x1 + r1 <= x2 - r2) && 
-          ((y1 + r1 >= y2 - r2 && y1 + r1 <= y2 + r2) || (y1 - r1 >= y2 - r2 && y1 - r1 <= y2 + r2)))
-          ||
-          ((x1 - r1
-                )
-                
-                ))
-        */
-        return false;
+        
+        return (Math.pow((x2-x1), 2) + Math.pow((y1-y2), 2) <= Math.pow((r1+r2), 2));
     }
 }

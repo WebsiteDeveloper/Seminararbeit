@@ -68,7 +68,9 @@ public class View implements Observer, Observable, Runnable {
     private double zoomLevel = 1;
     private double viewportCorrectionX = 0;
     private double viewportCorrectionY = 0;
-
+    
+    private String lastOpenedFilePath = "";
+    
     private final JMenuBar menuBar;
 
     public View(String title) {
@@ -204,6 +206,7 @@ public class View implements Observer, Observable, Runnable {
     private void layout() {
         this.canvas.setSize(this.frame.getWidth() - (int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
         this.panel.setSize((int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
+        this.panel.setPreferredSize(this.panel.getSize());
     }
 
     public void init() {
@@ -367,12 +370,19 @@ public class View implements Observer, Observable, Runnable {
 
     @SuppressWarnings("unchecked")
     private void openFile() {
-        final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-        JFileChooser fileChooser = new JFileChooser(f.getParentFile());
+        JFileChooser fileChooser;
+        
+        if(this.lastOpenedFilePath.isEmpty()) {
+            final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+            fileChooser = new JFileChooser(f.getParentFile());
+        } else {
+            fileChooser = new JFileChooser(this.lastOpenedFilePath);
+        }
         int state = fileChooser.showOpenDialog(this.frame);
 
         if (state == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
+            this.lastOpenedFilePath = selectedFile.getAbsolutePath();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
             if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
                 this.notifyObservers("Reset");
