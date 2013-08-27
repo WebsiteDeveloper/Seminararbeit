@@ -403,7 +403,7 @@ public class View implements Observer, Observable, Runnable {
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
             if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
                 this.sendPlanetsToObservers(Notifications.RESET, (ArrayList<Planet>) dataFromDataFile.get("Planets"));
-                this.notifyObservers(Notifications.DELTA_CHANGE, (String)dataFromDataFile.get("deltaT"));
+                this.notifyObservers(Notifications.DELTA_CHANGE, "" + dataFromDataFile.get("deltaT"));
                 this.notifyObservers(Notifications.RESET, empty);
             } else {
                 this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));

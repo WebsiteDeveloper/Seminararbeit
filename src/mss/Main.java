@@ -27,6 +27,7 @@ public class Main implements Observer, Observable, Runnable {
     private long time;
     private boolean shouldRun;
     private boolean paused;
+    private boolean areColliding = false;
     private boolean shouldReset = true;
 
     @SuppressWarnings("unchecked")
@@ -93,20 +94,26 @@ public class Main implements Observer, Observable, Runnable {
                 this.notifyObservers(type, data);
                 break;
             case RESUME:
-                this.paused = false;
+                if (!this.areColliding) {
+                    this.paused = false;
+                }
                 break;
             case PAUSE:
                 this.paused = true;
                 break;
             case START:
-                this.shouldRun = true;
-                this.paused = false;
-                this.shouldReset = false;
+                if (!this.areColliding) {
+                    this.shouldRun = true;
+                    this.paused = false;
+                    this.shouldReset = false;
+                    this.areColliding = false;
+                }
                 break;
             case RESET:
                 this.paused = true;
                 this.shouldRun = false;
                 this.shouldReset = true;
+                this.areColliding = false;
                 break;
         }
     }
@@ -156,6 +163,7 @@ public class Main implements Observer, Observable, Runnable {
                 if (!collisions.isEmpty()) {
                     System.out.println(collisions);
                     this.paused = true;
+                    this.areColliding = true;
                 }
                 break;
             case RESET:
