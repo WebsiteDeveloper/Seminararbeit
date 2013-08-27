@@ -5,6 +5,7 @@
 package mss;
 
 import java.util.ArrayList;
+import mss.util.Notifications;
 import mss.util.Planet;
 
 /**
@@ -14,13 +15,14 @@ import mss.util.Planet;
 public interface Observer {
     /**
      *
-     * @param msg
+     * @param type
+     * @param data
      */
-    public void notify(String msg);
+    public void notify(Notifications type, String data);
     /**
      *
-     * @param msg
+     * @param type
      * @param planets
      */
-    public void sendPlanets(String msg, ArrayList<Planet> planets);
+    public void sendPlanets(Notifications type, ArrayList<Planet> planets);
 }

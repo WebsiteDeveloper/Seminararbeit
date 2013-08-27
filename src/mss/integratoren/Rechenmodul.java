@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import mss.Observable;
 import mss.Observer;
+import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.Vektor2D;
 
@@ -60,7 +61,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
             ergs.add(new Planet(temp.getLabel(), new Vektor2D(temp.getCoords().getX() + deltaCoords.getX(), temp.getCoords().getY() + deltaCoords.getY()), temp.getMass(), temp.getRadix(), (Vektor2D)v.clone(), temp.getColor()));
         }
         
-        this.sendPlanetsToObservers("Result", ergs);
+        this.sendPlanetsToObservers(Notifications.RESULT, ergs);
     }
     
     private Vektor2D getDeltaCoords(Vektor2D v) {
@@ -120,11 +121,11 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void notifyObservers(String message) {
+    public void notifyObservers(Notifications type, String data) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
         for(Object temp : toArray) {
-            ((Observer)temp).notify(message);
+            ((Observer)temp).notify(type, data);
         }
     }
 
@@ -133,26 +134,30 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void notify(String msg) {
-        if(msg.startsWith("DeltaChange")) {
-            this.setDeltaT(Double.parseDouble(msg.split(" ")[1]));
+    public void notify(Notifications type, String data) {
+        switch(type) {
+            case DELTA_CHANGE:
+                this.setDeltaT(Double.parseDouble(data));
+                break;
         }
     }
 
     @Override
-    public void sendPlanets(String msg, ArrayList<Planet> planets) {
-        if(!"Display".equals(msg)) {
-            this.rechenschritt(planets);
+    public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
+        switch(type) {
+            case UPDATE:
+                this.rechenschritt(planets);
+                break;
         }
     }
 
     @Override
-    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(msg, planets);
+            ((Observer) temp).sendPlanets(type, planets);
         }
     }
 }

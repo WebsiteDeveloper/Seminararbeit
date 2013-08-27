@@ -7,6 +7,7 @@ package mss;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.Util;
 import mss.util.Vektor2D;
@@ -36,7 +37,7 @@ public class Main implements Observer, Observable, Runnable {
         this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new Color(255, 255, 255)));
         this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new Color(244, 233, 10)));
         this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D(), new Color(255, 255, 255)));
-        this.startPlanets = (ArrayList<Planet>)this.planets.clone();
+        this.startPlanets = (ArrayList<Planet>) this.planets.clone();
     }
 
     @SuppressWarnings("unchecked")
@@ -45,14 +46,14 @@ public class Main implements Observer, Observable, Runnable {
 
         while (this.shouldReset) {
             this.shouldReset = false;
-            this.planets = (ArrayList<Planet>)this.startPlanets.clone();
-            this.sendPlanetsToObservers("Display", this.planets);
-            
+            this.planets = (ArrayList<Planet>) this.startPlanets.clone();
+            this.sendPlanetsToObservers(Notifications.DISPLAY, this.planets);
+
             while (!this.shouldRun) {
                 if (Main.closed) {
                     return;
                 }
-                if(this.shouldReset) {
+                if (this.shouldReset) {
                     break;
                 }
                 try {
@@ -60,44 +61,54 @@ public class Main implements Observer, Observable, Runnable {
                 } catch (InterruptedException ex) {
                 }
             }
-            
+
             while (true) {
                 if (Main.closed) {
                     return;
                 }
-                if(this.shouldReset) {
+                if (this.shouldReset) {
                     break;
                 }
-                
-                long delta = this.getDelta();
-                if (delta >= 1 && !this.paused) {
-                    this.sendPlanetsToObservers("Update", this.planets);
-                    this.time = this.getTime();
+
+                if (!this.paused) {
+                    long delta = this.getDelta();
+                    if (delta >= 0.5) {
+                        this.sendPlanetsToObservers(Notifications.UPDATE, this.planets);
+                        this.time = this.getTime();
+                    }
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                    }
                 }
             }
         }
     }
 
     @Override
-    public void notify(String msg) {
-        if (msg.startsWith("AddPlanet")) {
-        } else if(msg.startsWith("DeltaChange")) {
-            this.notifyObservers(msg);
-        } else if (msg.startsWith("Restart")) {
-            this.paused = false;
-        } else if (msg.startsWith("Reset")) {
-            this.paused = true;
-            this.shouldRun = false;
-            this.shouldReset = true;
-        } else if (msg.startsWith("Start")) {
-            this.shouldRun = true;
-            this.paused = false;
-            this.shouldReset = false;
-        } else if (msg.startsWith("Pause")) {
-            this.paused = true;
+    public void notify(Notifications type, String data) {
+        switch (type) {
+            case DELTA_CHANGE:
+                this.notifyObservers(type, data);
+                break;
+            case RESUME:
+                this.paused = false;
+                break;
+            case PAUSE:
+                this.paused = true;
+                break;
+            case START:
+                this.shouldRun = true;
+                this.paused = false;
+                this.shouldReset = false;
+                break;
+            case RESET:
+                this.paused = true;
+                this.shouldRun = false;
+                this.shouldReset = true;
+                break;
         }
-        
-        System.out.println(msg);
     }
 
     private long getTime() {
@@ -123,47 +134,48 @@ public class Main implements Observer, Observable, Runnable {
 
     /**
      *
-     * @param message
+     * @param type
+     * @param data
      */
     @Override
-    public void notifyObservers(String message) {
+    public void notifyObservers(Notifications type, String data) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).notify(message);
+            ((Observer) temp).notify(type, data);
         }
     }
 
     @Override
-    public void sendPlanets(String msg, ArrayList<Planet> planets) {
-        switch (msg) {
-            case "Result":
+    public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
+        switch (type) {
+            case RESULT:
                 this.planets = planets;
                 String collisions = Util.findCollisions(planets);
-                if(!collisions.isEmpty()) {
+                if (!collisions.isEmpty()) {
                     System.out.println(collisions);
                     this.paused = true;
                 }
                 break;
-            case "Reset":
+            case RESET:
                 this.startPlanets = planets;
                 break;
         }
     }
 
     /**
-     * 
-     * @param msg
+     *
+     * @param type
      * @param planets
      */
     @Override
-    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(msg, planets);
+            ((Observer) temp).sendPlanets(type, planets);
         }
     }
 

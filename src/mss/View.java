@@ -32,6 +32,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
@@ -68,8 +69,9 @@ public class View implements Observer, Observable, Runnable {
     private double zoomLevel = 1;
     private double viewportCorrectionX = 0;
     private double viewportCorrectionY = 0;
-    
+
     private String lastOpenedFilePath = "";
+    private final String empty = "";
     
     private final JMenuBar menuBar;
 
@@ -107,14 +109,31 @@ public class View implements Observer, Observable, Runnable {
         this.frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                layout();
+                layout(e.getComponent().getWidth(), e.getComponent().getHeight());
             }
         });
 
         this.frame.addWindowFocusListener(new WindowAdapter() {
+            private boolean wasAlreadyPaused;
+
             @Override
             public void windowGainedFocus(WindowEvent e) {
+                if (!this.wasAlreadyPaused) {
+                    notifyObservers(Notifications.RESUME, empty);
+                    isPaused = false;
+                }
                 canvas.requestFocusInWindow();
+            }
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+                if (!isPaused) {
+                    isPaused = true;
+                    notifyObservers(Notifications.PAUSE, empty);
+                } else {
+                    this.wasAlreadyPaused = true;
+                }
+                super.windowLostFocus(e);
             }
         });
 
@@ -135,7 +154,7 @@ public class View implements Observer, Observable, Runnable {
         openFile.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers("Pause");
+                notifyObservers(Notifications.PAUSE, empty);
                 isPaused = true;
                 openFile();
                 canvas.requestFocus();
@@ -147,7 +166,7 @@ public class View implements Observer, Observable, Runnable {
         start.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers("Start");
+                notifyObservers(Notifications.START, empty);
                 isPaused = false;
                 canvas.requestFocus();
             }
@@ -158,8 +177,7 @@ public class View implements Observer, Observable, Runnable {
         reset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers("Reset");
-                isPaused = true;
+                notifyObservers(Notifications.RESET, empty);
                 canvas.requestFocus();
             }
         });
@@ -170,11 +188,11 @@ public class View implements Observer, Observable, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isPaused) {
-                    notifyObservers("Pause");
+                    notifyObservers(Notifications.PAUSE, empty);
                     isPaused = true;
                     ((JMenuItem) e.getSource()).setText("Restart");
                 } else {
-                    notifyObservers("Restart");
+                    notifyObservers(Notifications.RESUME, empty);
                     isPaused = false;
                     ((JMenuItem) e.getSource()).setText("Pause");
                 }
@@ -189,7 +207,7 @@ public class View implements Observer, Observable, Runnable {
             public void actionPerformed(ActionEvent e) {
                 ((JMenuItem) e.getSource()).setName("");
                 if (!isPaused) {
-                    notifyObservers("Pause");
+                    notifyObservers(Notifications.PAUSE, empty);
                     isPaused = true;
                     ((JMenuItem) e.getSource()).setName("selfPaused");
                 }
@@ -203,10 +221,12 @@ public class View implements Observer, Observable, Runnable {
         this.menuBar.add(helpMenu);
     }
 
-    private void layout() {
-        this.canvas.setSize(this.frame.getWidth() - (int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
-        this.panel.setSize((int) Math.floor(this.frame.getWidth() * 0.2), this.frame.getHeight());
+    private void layout(int width, int height) {
+        this.panel.setSize((int) Math.floor(width * 0.2), height);
         this.panel.setPreferredSize(this.panel.getSize());
+        this.canvas.setSize(width - this.panel.getWidth(), height);
+        this.canvas.setPreferredSize(this.canvas.getSize());
+        this.canvas.setLocation(this.panel.getWidth(), 0);
     }
 
     public void init() {
@@ -230,17 +250,11 @@ public class View implements Observer, Observable, Runnable {
             this.initOpenGL();
 
             LWJGLRenderer renderer = new LWJGLRenderer();
-            //Widgets gameUI = new Widgets();
-            //GUI gui = new GUI(gameUI, renderer);
-            //ThemeManager theme = ThemeManager.createThemeManager(Widgets.class.getResource("chutzpah.xml"), renderer);
-            //gui.applyTheme(theme);
 
             Dimension newDim;
 
-            this.notifyObservers("DisplayInit");
-            while (!Display.isCloseRequested() && !this.closeRequested) {//&& !gameUI.quit
+            while (!Display.isCloseRequested() && !View.closeRequested) {
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-
                 newDim = newCanvasSize.getAndSet(null);
                 checkKeyInput();
                 if (newDim != null) {
@@ -254,13 +268,10 @@ public class View implements Observer, Observable, Runnable {
 
                 checkKeyInput();
                 checkMouseInput();
-                //gui.update();
                 Display.update();
                 Display.sync(60);
             }
 
-            //gui.destroy();
-            //theme.destroy();
             Display.destroy();
             this.frame.dispose();
             Main.closed = true;
@@ -301,6 +312,12 @@ public class View implements Observer, Observable, Runnable {
                     this.viewportCorrectionX = 0;
                     this.viewportCorrectionY = 0;
                     this.initOpenGL();
+                    break;
+                case Keyboard.KEY_ADD:
+                    System.out.println("Add");
+                    break;
+                case Keyboard.KEY_SUBTRACT:
+                    System.out.println("Subtract");
                     break;
             }
         }
@@ -350,7 +367,7 @@ public class View implements Observer, Observable, Runnable {
 
             @Override
             public void windowDeactivated(WindowEvent e) {
-                notifyObservers("Restart");
+                notifyObservers(Notifications.RESUME, "");
                 isPaused = false;
                 e.getWindow().dispose();
             }
@@ -371,8 +388,8 @@ public class View implements Observer, Observable, Runnable {
     @SuppressWarnings("unchecked")
     private void openFile() {
         JFileChooser fileChooser;
-        
-        if(this.lastOpenedFilePath.isEmpty()) {
+
+        if (this.lastOpenedFilePath.isEmpty()) {
             final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
             fileChooser = new JFileChooser(f.getParentFile());
         } else {
@@ -385,14 +402,14 @@ public class View implements Observer, Observable, Runnable {
             this.lastOpenedFilePath = selectedFile.getAbsolutePath();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
             if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
-                this.notifyObservers("Reset");
-                this.sendPlanetsToObservers("Reset", (ArrayList<Planet>) dataFromDataFile.get("Planets"));
-                this.notifyObservers("DeltaChange " + dataFromDataFile.get("deltaT"));
+                this.sendPlanetsToObservers(Notifications.RESET, (ArrayList<Planet>) dataFromDataFile.get("Planets"));
+                this.notifyObservers(Notifications.DELTA_CHANGE, (String)dataFromDataFile.get("deltaT"));
+                this.notifyObservers(Notifications.RESET, empty);
             } else {
                 this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
             }
         } else {
-            notifyObservers("Restart");
+            notifyObservers(Notifications.RESUME, empty);
             this.isPaused = false;
         }
     }
@@ -425,12 +442,12 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void notifyObservers(String message) {
+    public void notifyObservers(Notifications type, String data) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).notify(message);
+            ((Observer) temp).notify(type, data);
         }
     }
 
@@ -440,22 +457,22 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void notify(String msg) {
+    public void notify(Notifications type, String data) {
     }
 
     @Override
-    public void sendPlanets(String msg, ArrayList<Planet> planets) {
+    public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
         this.planets = planets;
         this.isPaused = false;
     }
 
     @Override
-    public void sendPlanetsToObservers(String msg, ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(msg, planets);
+            ((Observer) temp).sendPlanets(type, planets);
         }
     }
 
