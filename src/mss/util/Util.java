@@ -85,14 +85,16 @@ public class Util {
     }
     
     public static String findCollisions(ArrayList<Planet> planets) {
-        int size = planets.size();
         String collisions = "";
         
-        for(int i = 0; i < size; i++) {  
-            for(int j = 0; j < size; j++) {
+        for(int i = 0; i < planets.size(); i++) {  
+            for(int j = 0; j < planets.size(); j++) {
                 if(i != j) {
                     if(Planet.areColliding(planets.get(i), planets.get(j))) {
                         collisions += "Die Planeten " + planets.get(i).getLabel() + " und " + planets.get(j).getLabel() + " kollidieren.\n";
+                        planets.remove(i);
+                        i--;
+                        j--;
                     }
                 }
             }
