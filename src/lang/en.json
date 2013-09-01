@@ -1,0 +1,12 @@
+{
+    "ADD": "Add",
+    "DELETE": "Delete",
+    "FILE": "File",
+    "HELP": "Help",
+    "OPEN_FILE": "Open File",
+    "START_SIMULATION": "Start Simulation",
+    "RESET_SIMULATION": "Reset Simulation",
+    "PAUSE": "Pause",
+    "RESTART": "Restart",
+    "ABOUT": "About"
+}
