@@ -81,7 +81,7 @@ public class Planet {
         GL11.glBegin(GL11.GL_POLYGON);
         GL11.glColor3f((float)(this.color.getRed()/255.0), (float)(this.color.getGreen()/255.0), (float)(this.color.getBlue()/255.0));
         for (double angle = 0; angle <= 360; angle += 1) {
-            GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, -this.coords.getY() + Math.cos(angle) * this.radix);
+            GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, this.coords.getY() + Math.cos(angle) * this.radix);
         }
         GL11.glEnd();
     }

@@ -18,11 +18,13 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -31,6 +33,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 import mss.util.Notifications;
 import mss.util.Planet;
@@ -51,7 +54,8 @@ public class View implements Observer, Observable, Runnable {
 
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
-
+    private enum ChangeType { INCREASE, DECREASE };
+    
     private ArrayList<Planet> planets = new ArrayList<>();
     private final HashMap<String, Observer> observers;
     private String title;
@@ -63,10 +67,18 @@ public class View implements Observer, Observable, Runnable {
     private final JButton addButton;
     private final JButton deleteButton;
     private final JTable planetsTable;
-    private final PlanetsTableModel tableModel;
-
+    private final JPanel planetPanel = new JPanel();
+    
+    /* Single Planet UI */
+    private final JTextField planetLabeld = new JTextField(),
+                             coordsX = new JTextField(), coordsY = new JTextField(),
+                             mass = new JTextField(), radix = new JTextField(),
+                             vX = new JTextField(), vY = new JTextField();
+    private final JColorChooser colorChooser = new JColorChooser();
+    
     private boolean isPaused = true;
-    private double zoomLevel = 1;
+    private int zoomLevel = 1;
+    private DoubleBuffer buffer;
     private double viewportCorrectionX = 0;
     private double viewportCorrectionY = 0;
 
@@ -76,6 +88,24 @@ public class View implements Observer, Observable, Runnable {
     private final JMenuBar menuBar;
 
     public View(String title) {
+        this.buffer = BufferUtils.createDoubleBuffer(16);
+        this.buffer.put(0, this.zoomLevel);
+        this.buffer.put(1, 0);
+        this.buffer.put(2, 0);
+        this.buffer.put(3, 0);
+        this.buffer.put(4, 0);
+        this.buffer.put(5, this.zoomLevel);
+        this.buffer.put(6, 0);
+        this.buffer.put(7, 0);
+        this.buffer.put(8, 0);
+        this.buffer.put(9, 0);
+        this.buffer.put(10, this.zoomLevel);
+        this.buffer.put(11, 0);
+        this.buffer.put(12, 0);
+        this.buffer.put(13, 0);
+        this.buffer.put(14, 0);
+        this.buffer.put(15, this.zoomLevel);
+        
         this.observers = new HashMap<>();
         this.title = title;
         this.frame = new JFrame(title);
@@ -91,13 +121,14 @@ public class View implements Observer, Observable, Runnable {
         this.deleteButton.setSize(80, 40);
         this.deleteButton.setFocusable(false);
 
-        this.tableModel = new PlanetsTableModel();
-        this.planetsTable = new JTable(this.tableModel);
-        this.tableModel.changeData(planets);
-
+        this.planetsTable = new JTable(0, 1);
+        this.planetsTable.setMinimumSize(new Dimension(160, 400));
+        this.planetsTable.setVisible(true);
+        this.planetsTable.setFocusable(false);
+        
+        this.panel.add(this.planetsTable);
         this.panel.add(this.addButton);
         this.panel.add(this.deleteButton);
-        this.panel.add(this.planetsTable);
 
         this.canvas.addComponentListener(new ComponentAdapter() {
             @Override
@@ -326,8 +357,10 @@ public class View implements Observer, Observable, Runnable {
     private void initOpenGL() {
         GL11.glMatrixMode(GL11.GL_PROJECTION);
 
-        GL11.glLoadIdentity();
-        GL11.glOrtho((-Display.getWidth() / this.zoomLevel) + this.viewportCorrectionX, (Display.getWidth() / this.zoomLevel) + this.viewportCorrectionX, (Display.getHeight() / this.zoomLevel) + this.viewportCorrectionY, (-Display.getHeight() / this.zoomLevel) + this.viewportCorrectionY, 1, -1);
+        GL11.glLoadMatrix(this.buffer);
+
+        GL11.glOrtho(-Display.getWidth() + this.viewportCorrectionX, Display.getWidth() + this.viewportCorrectionX, -Display.getHeight() + this.viewportCorrectionY, Display.getHeight() + this.viewportCorrectionY, 1, -1);
+        
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
         GL11.glEnable(GL11.GL_BLEND);
@@ -462,8 +495,19 @@ public class View implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
-        this.planets = planets;
-        this.isPaused = false;
+        switch(type) {
+            case DISPLAY:
+                this.planets = planets;
+                this.isPaused = false;
+                this.addPlanetsToTable();
+                break;
+            case UPDATE:
+                this.planets = planets;
+                this.isPaused = false;
+                break;
+        }
+        
+        
     }
 
     @Override
@@ -480,46 +524,53 @@ public class View implements Observer, Observable, Runnable {
         int delta = Mouse.getDWheel();
 
         if (delta > 0) {
-            if (this.zoomLevel > 1) {
-                this.setZoomFactor(this.zoomLevel + 1);
-            } else {
-                this.setZoomFactor(this.zoomLevel + 0.1);
-            }
+            this.changeZoomFactor(ChangeType.DECREASE);
         } else if (delta < 0) {
-            if (this.zoomLevel > 1) {
-                this.setZoomFactor(this.zoomLevel - 1);
-            } else {
-                this.setZoomFactor(this.zoomLevel - 0.1);
-            }
+            this.changeZoomFactor(ChangeType.INCREASE);
         }
     }
 
-    private void setZoomFactor(double value) {
-        if (value >= 0.1) {
-            this.zoomLevel = value;
+    private void changeZoomFactor(ChangeType change) {
+        switch(change) {
+            case DECREASE:
+                if(this.zoomLevel != 1) {
+                    this.zoomLevel -= 1;
+                } else {
+                    this.zoomLevel = -1;
+                }
+                break;
+            case INCREASE:
+                if(this.zoomLevel != -1) {
+                    this.zoomLevel += 1;
+                } else {
+                    this.zoomLevel = 1;
+                }
+                break;
         }
 
+        if(this.zoomLevel > 0) {
+            System.out.println(this.zoomLevel);
+            this.buffer.put(0, this.zoomLevel);
+            this.buffer.put(5, this.zoomLevel);
+            this.buffer.put(10, this.zoomLevel);
+        } else if(this.zoomLevel < 0) {
+            System.out.println(1.0/-this.zoomLevel);
+            this.buffer.put(0, 1.0/-this.zoomLevel);
+            this.buffer.put(5, 1.0/-this.zoomLevel);
+            this.buffer.put(10, 1.0/-this.zoomLevel);
+        }
+        
         this.initOpenGL();
     }
 
-    private class PlanetsTableModel extends DefaultTableModel {
-
-        private static final long serialVersionUID = 1L;
-
-        public void changeData(ArrayList<Planet> planets) {
-            int rows = this.getRowCount();
-            for (int i = 0; i < rows; i++) {
-                this.removeRow(i);
-            }
-            this.fireTableRowsDeleted(0, rows);
-
-            int size = planets.size();
-            Planet[] temp = new Planet[1];
-            for (int i = 0; i < size; i++) {
-                //temp[1] = (Planet)planets.get(i).clone();
-                this.addRow(temp.clone());
-            }
-            this.fireTableRowsInserted(0, this.getRowCount());
+    private void addPlanetsToTable() {
+        int size = this.planets.size();
+        DefaultTableModel model = (DefaultTableModel)this.planetsTable.getModel();
+        String[] temp = new String[1];
+        
+        for(int i = 0; i < size; i++) {
+            temp[0] = this.planets.get(i).getLabel();
+            model.addRow(temp);
         }
     }
 }
