@@ -524,9 +524,9 @@ public class View implements Observer, Observable, Runnable {
         int delta = Mouse.getDWheel();
 
         if (delta > 0) {
-            this.changeZoomFactor(ChangeType.DECREASE);
-        } else if (delta < 0) {
             this.changeZoomFactor(ChangeType.INCREASE);
+        } else if (delta < 0) {
+            this.changeZoomFactor(ChangeType.DECREASE);
         }
     }
 
@@ -549,12 +549,10 @@ public class View implements Observer, Observable, Runnable {
         }
 
         if(this.zoomLevel > 0) {
-            System.out.println(this.zoomLevel);
             this.buffer.put(0, this.zoomLevel);
             this.buffer.put(5, this.zoomLevel);
             this.buffer.put(10, this.zoomLevel);
         } else if(this.zoomLevel < 0) {
-            System.out.println(1.0/-this.zoomLevel);
             this.buffer.put(0, 1.0/-this.zoomLevel);
             this.buffer.put(5, 1.0/-this.zoomLevel);
             this.buffer.put(10, 1.0/-this.zoomLevel);
