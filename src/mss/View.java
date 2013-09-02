@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.swing.JButton;
-import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -32,9 +30,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
 import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
@@ -64,24 +59,12 @@ public class View implements Observer, Observable, Runnable {
     };
 
     private ArrayList<Planet> planets = new ArrayList<>();
-    private final HashMap<String, Observer> observers;
+    private final HashMap<String, Observer> observers = new HashMap<>();
     private String title;
     private final Canvas canvas = new Canvas();
     private final JFrame frame;
-    private final JPanel panel;
+    private final JPanel panel = new JPanel();
 
-    /* Panel UI */
-    private final JButton addButton;
-    private final JButton deleteButton;
-    private final JTable planetsTable;
-    private final JPanel planetPanel = new JPanel();
-
-    /* Single Planet UI */
-    private final JTextField planetLabeld = new JTextField(),
-            coordsX = new JTextField(), coordsY = new JTextField(),
-            mass = new JTextField(), radix = new JTextField(),
-            vX = new JTextField(), vY = new JTextField();
-    private final JColorChooser colorChooser = new JColorChooser();
 
     private boolean isPaused = true;
     private int zoomLevel = 1;
@@ -94,91 +77,15 @@ public class View implements Observer, Observable, Runnable {
 
     public View(String title) {
         this.buffer = BufferUtils.createDoubleBuffer(16);
-        this.buffer.put(0, this.zoomLevel);
-        this.buffer.put(1, 0);
-        this.buffer.put(2, 0);
-        this.buffer.put(3, 0);
-        this.buffer.put(4, 0);
-        this.buffer.put(5, this.zoomLevel);
-        this.buffer.put(6, 0);
-        this.buffer.put(7, 0);
-        this.buffer.put(8, 0);
-        this.buffer.put(9, 0);
-        this.buffer.put(10, this.zoomLevel);
-        this.buffer.put(11, 0);
-        this.buffer.put(12, 0);
-        this.buffer.put(13, 0);
-        this.buffer.put(14, 0);
-        this.buffer.put(15, this.zoomLevel);
-
-        this.observers = new HashMap<>();
+        this.initBuffer();
+        
         this.title = title;
         this.frame = new JFrame(title);
-        this.panel = new JPanel();
+        
         this.panel.setPreferredSize(new Dimension(160, 600));
         this.panel.setBackground(Color.red);
 
-        this.addButton = new JButton("Add");
-        this.addButton.setSize(80, 40);
-        this.addButton.setFocusable(false);
-
-        this.deleteButton = new JButton("Delete");
-        this.deleteButton.setSize(80, 40);
-        this.deleteButton.setFocusable(false);
-
-        this.planetsTable = new JTable(0, 1);
-        this.planetsTable.setMinimumSize(new Dimension(160, 400));
-        this.planetsTable.setVisible(true);
-        this.planetsTable.setFocusable(false);
-
-        this.panel.add(this.planetsTable);
-        this.panel.add(this.addButton);
-        this.panel.add(this.deleteButton);
-
-        this.canvas.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                newCanvasSize.set(new Dimension(canvas.getSize().width, canvas.getSize().height));
-            }
-        });
-
-        this.frame.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                layout(e.getComponent().getWidth(), e.getComponent().getHeight());
-            }
-        });
-
-        this.frame.addWindowFocusListener(new WindowAdapter() {
-            private boolean wasAlreadyPaused;
-
-            @Override
-            public void windowGainedFocus(WindowEvent e) {
-                if (!this.wasAlreadyPaused) {
-                    notifyObservers(Notifications.RESUME, empty);
-                    isPaused = false;
-                }
-                canvas.requestFocusInWindow();
-            }
-
-            @Override
-            public void windowLostFocus(WindowEvent e) {
-                if (!isPaused) {
-                    isPaused = true;
-                    notifyObservers(Notifications.PAUSE, empty);
-                } else {
-                    this.wasAlreadyPaused = true;
-                }
-                super.windowLostFocus(e);
-            }
-        });
-
-        this.frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                closeRequested = true;
-            }
-        });
+        this.addListeners();
 
         this.menuBar = new JMenuBar();
         this.frame.setJMenuBar(this.menuBar);
@@ -256,7 +163,71 @@ public class View implements Observer, Observable, Runnable {
         this.menuBar.add(fileMenu);
         this.menuBar.add(helpMenu);
     }
+    
+    private void initBuffer() {
+        this.buffer.put(0, this.zoomLevel);
+        this.buffer.put(1, 0);
+        this.buffer.put(2, 0);
+        this.buffer.put(3, 0);
+        this.buffer.put(4, 0);
+        this.buffer.put(5, this.zoomLevel);
+        this.buffer.put(6, 0);
+        this.buffer.put(7, 0);
+        this.buffer.put(8, 0);
+        this.buffer.put(9, 0);
+        this.buffer.put(10, this.zoomLevel);
+        this.buffer.put(11, 0);
+        this.buffer.put(12, 0);
+        this.buffer.put(13, 0);
+        this.buffer.put(14, 0);
+        this.buffer.put(15, this.zoomLevel);
+    }
+    
+    private void addListeners() {
+        this.canvas.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                newCanvasSize.set(new Dimension(canvas.getSize().width, canvas.getSize().height));
+            }
+        });
 
+        this.frame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                layout(e.getComponent().getWidth(), e.getComponent().getHeight());
+            }
+        });
+
+        this.frame.addWindowListener(new WindowAdapter() {
+            private boolean wasAlreadyPaused;
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                if (!this.wasAlreadyPaused) {
+                    notifyObservers(Notifications.RESUME, empty);
+                    isPaused = false;
+                }
+                canvas.requestFocusInWindow();
+            }
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+                if (!isPaused) {
+                    isPaused = true;
+                    notifyObservers(Notifications.PAUSE, empty);
+                } else {
+                    this.wasAlreadyPaused = true;
+                }
+                super.windowLostFocus(e);
+            }
+            
+            @Override
+            public void windowClosing(WindowEvent e) {
+                closeRequested = true;
+            }
+        });
+    }
+    
     private void layout(int width, int height) {
         this.panel.setSize((int) Math.floor(width * 0.2), height);
         this.panel.setPreferredSize(this.panel.getSize());
@@ -498,7 +469,6 @@ public class View implements Observer, Observable, Runnable {
             case DISPLAY:
                 this.planets = planets;
                 this.isPaused = false;
-                this.addPlanetsToTable();
                 break;
             case UPDATE:
                 this.planets = planets;
@@ -582,16 +552,5 @@ public class View implements Observer, Observable, Runnable {
         }
 
         this.initOpenGL();
-    }
-
-    private void addPlanetsToTable() {
-        int size = this.planets.size();
-        DefaultTableModel model = (DefaultTableModel) this.planetsTable.getModel();
-        String[] temp = new String[1];
-
-        for (int i = 0; i < size; i++) {
-            temp[0] = this.planets.get(i).getLabel();
-            model.addRow(temp);
-        }
     }
 }
