@@ -34,8 +34,10 @@ import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
+import mss.util.Vektor2D;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -58,7 +60,9 @@ public class View implements Observer, Observable, Runnable {
         UP, DOWN, LEFT, RIGHT
     };
 
-    private ArrayList<Planet> planets = new ArrayList<>();
+    private ArrayList<Planet> planets;
+    private ArrayList<Planet> startPlanets;
+    private long time;
     private final HashMap<String, Observer> observers = new HashMap<>();
     private String title;
     private final Canvas canvas = new Canvas();
@@ -76,6 +80,12 @@ public class View implements Observer, Observable, Runnable {
     private final JMenuBar menuBar;
 
     public View(String title) {
+        this.planets = new ArrayList<>();
+        this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
+        this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
+        this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D(), new org.lwjgl.util.Color(255, 255, 255)));
+        this.startPlanets = (ArrayList<Planet>) this.planets.clone();
+        
         this.buffer = BufferUtils.createDoubleBuffer(16);
         this.initBuffer();
         
@@ -281,7 +291,6 @@ public class View implements Observer, Observable, Runnable {
 
             Display.destroy();
             this.frame.dispose();
-            Main.closed = true;
         } catch (LWJGLException e) {
             System.out.println(e.getMessage());
             System.exit(-1);
@@ -552,5 +561,16 @@ public class View implements Observer, Observable, Runnable {
         }
 
         this.initOpenGL();
+    }
+    
+    private long getTime() {
+        return (Sys.getTime() * 1000 / Sys.getTimerResolution());
+    }
+
+    private long getDelta() {
+        long current_time = this.getTime();
+        long delta = current_time - this.time;
+
+        return delta;
     }
 }

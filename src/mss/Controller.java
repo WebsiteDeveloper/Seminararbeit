@@ -15,17 +15,12 @@ import mss.integratoren.Rechenmodul;
 public class Controller implements Runnable {
     private final Rechenmodul modul;
     private final View frame;
-    private final Main mainHandler;
     private final HashMap<String, Thread> threads = new HashMap<>();
     
     public Controller() {
-        this.mainHandler = new Main();
         this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
-        this.modul.registerObserver("main", this.mainHandler);
         this.frame = new View("MSS");
-        this.frame.registerObserver("main", this.mainHandler);
-        this.mainHandler.registerObserver("view", this.frame);
-        this.mainHandler.registerObserver("modul", this.modul);
+        this.frame.registerObserver("modul", this.modul);
         
         Thread modulThread = new Thread(this.modul);
         modulThread.setName("modul");
@@ -34,16 +29,11 @@ public class Controller implements Runnable {
         Thread frameThread = new Thread(this.frame);
         frameThread.setName("frame");
         this.threads.put("frame", frameThread);
-        
-        Thread mainThread = new Thread(this.mainHandler);
-        mainThread.setName("main");
-        this.threads.put("main", mainThread);
     }
     
     public void start() {
         this.threads.get("modul").start();
         this.threads.get("frame").start();
-        this.threads.get("main").start();
     }
     
     /**
