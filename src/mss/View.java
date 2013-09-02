@@ -54,8 +54,15 @@ public class View implements Observer, Observable, Runnable {
 
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
-    private enum ChangeType { INCREASE, DECREASE };
-    
+
+    private enum ChangeType {
+        INCREASE, DECREASE
+    };
+
+    private enum Directions {
+        UP, DOWN, LEFT, RIGHT
+    };
+
     private ArrayList<Planet> planets = new ArrayList<>();
     private final HashMap<String, Observer> observers;
     private String title;
@@ -68,23 +75,21 @@ public class View implements Observer, Observable, Runnable {
     private final JButton deleteButton;
     private final JTable planetsTable;
     private final JPanel planetPanel = new JPanel();
-    
+
     /* Single Planet UI */
     private final JTextField planetLabeld = new JTextField(),
-                             coordsX = new JTextField(), coordsY = new JTextField(),
-                             mass = new JTextField(), radix = new JTextField(),
-                             vX = new JTextField(), vY = new JTextField();
+            coordsX = new JTextField(), coordsY = new JTextField(),
+            mass = new JTextField(), radix = new JTextField(),
+            vX = new JTextField(), vY = new JTextField();
     private final JColorChooser colorChooser = new JColorChooser();
-    
+
     private boolean isPaused = true;
     private int zoomLevel = 1;
-    private DoubleBuffer buffer;
-    private double viewportCorrectionX = 0;
-    private double viewportCorrectionY = 0;
+    private final DoubleBuffer buffer;
 
     private String lastOpenedFilePath = "";
     private final String empty = "";
-    
+
     private final JMenuBar menuBar;
 
     public View(String title) {
@@ -105,7 +110,7 @@ public class View implements Observer, Observable, Runnable {
         this.buffer.put(13, 0);
         this.buffer.put(14, 0);
         this.buffer.put(15, this.zoomLevel);
-        
+
         this.observers = new HashMap<>();
         this.title = title;
         this.frame = new JFrame(title);
@@ -125,7 +130,7 @@ public class View implements Observer, Observable, Runnable {
         this.planetsTable.setMinimumSize(new Dimension(160, 400));
         this.planetsTable.setVisible(true);
         this.planetsTable.setFocusable(false);
-        
+
         this.panel.add(this.planetsTable);
         this.panel.add(this.addButton);
         this.panel.add(this.deleteButton);
@@ -324,25 +329,19 @@ public class View implements Observer, Observable, Runnable {
 
             switch (Keyboard.getEventKey()) {
                 case Keyboard.KEY_UP:
-                    this.viewportCorrectionY -= (1 * 10) / this.zoomLevel;
-                    this.initOpenGL();
+                    this.changeTranslationMatrix(Directions.UP);
                     break;
                 case Keyboard.KEY_DOWN:
-                    this.viewportCorrectionY += (1 * 10) / this.zoomLevel;
-                    this.initOpenGL();
+                    this.changeTranslationMatrix(Directions.DOWN);
                     break;
                 case Keyboard.KEY_LEFT:
-                    this.viewportCorrectionX -= (1 * 10) / this.zoomLevel;
-                    this.initOpenGL();
+                    this.changeTranslationMatrix(Directions.LEFT);
                     break;
                 case Keyboard.KEY_RIGHT:
-                    this.viewportCorrectionX += (1 * 10) / this.zoomLevel;
-                    this.initOpenGL();
+                    this.changeTranslationMatrix(Directions.RIGHT);
                     break;
                 case Keyboard.KEY_R:
-                    this.viewportCorrectionX = 0;
-                    this.viewportCorrectionY = 0;
-                    this.initOpenGL();
+                    this.resetTranslationMatrix();
                     break;
                 case Keyboard.KEY_ADD:
                     System.out.println("Add");
@@ -359,8 +358,8 @@ public class View implements Observer, Observable, Runnable {
 
         GL11.glLoadMatrix(this.buffer);
 
-        GL11.glOrtho(-Display.getWidth() + this.viewportCorrectionX, Display.getWidth() + this.viewportCorrectionX, -Display.getHeight() + this.viewportCorrectionY, Display.getHeight() + this.viewportCorrectionY, 1, -1);
-        
+        GL11.glOrtho(-Display.getWidth(), Display.getWidth(), -Display.getHeight(), Display.getHeight(), 1, -1);
+
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
         GL11.glEnable(GL11.GL_BLEND);
@@ -412,9 +411,9 @@ public class View implements Observer, Observable, Runnable {
         GL11.glReadBuffer(GL11.GL_FRONT);
         int width = Display.getWidth();
         int height = Display.getHeight();
-        ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
-        GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-        ScreenshotSaver saver = new ScreenshotSaver(buffer, f.getParent(), width, height);
+        ByteBuffer byteBuffer = BufferUtils.createByteBuffer(width * height * 4);
+        GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, byteBuffer);
+        ScreenshotSaver saver = new ScreenshotSaver(byteBuffer, f.getParent(), width, height);
         saver.start();
     }
 
@@ -495,7 +494,7 @@ public class View implements Observer, Observable, Runnable {
 
     @Override
     public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
-        switch(type) {
+        switch (type) {
             case DISPLAY:
                 this.planets = planets;
                 this.isPaused = false;
@@ -506,8 +505,7 @@ public class View implements Observer, Observable, Runnable {
                 this.isPaused = false;
                 break;
         }
-        
-        
+
     }
 
     @Override
@@ -530,43 +528,68 @@ public class View implements Observer, Observable, Runnable {
         }
     }
 
-    private void changeZoomFactor(ChangeType change) {
-        switch(change) {
-            case DECREASE:
-                if(this.zoomLevel != 1) {
-                    this.zoomLevel -= 1;
-                } else {
-                    this.zoomLevel = -1;
-                }
+    private void resetTranslationMatrix() {
+        this.buffer.put(12, 0);
+        this.buffer.put(13, 0);
+        this.initOpenGL();
+    }
+    
+    private void changeTranslationMatrix(Directions direction) {
+        switch(direction) {
+            case UP:
+                this.buffer.put(13, this.buffer.get(13) + 0.01);
                 break;
-            case INCREASE:
-                if(this.zoomLevel != -1) {
-                    this.zoomLevel += 1;
-                } else {
-                    this.zoomLevel = 1;
-                }
+            case DOWN:
+                this.buffer.put(13, this.buffer.get(13) - 0.01);
                 break;
-        }
-
-        if(this.zoomLevel > 0) {
-            this.buffer.put(0, this.zoomLevel);
-            this.buffer.put(5, this.zoomLevel);
-            this.buffer.put(10, this.zoomLevel);
-        } else if(this.zoomLevel < 0) {
-            this.buffer.put(0, 1.0/-this.zoomLevel);
-            this.buffer.put(5, 1.0/-this.zoomLevel);
-            this.buffer.put(10, 1.0/-this.zoomLevel);
+            case LEFT:
+                this.buffer.put(12, this.buffer.get(12) - 0.01);
+                break;
+            case RIGHT:
+                this.buffer.put(12, this.buffer.get(12) + 0.01);
+                break;
         }
         
         this.initOpenGL();
     }
 
+    private void changeZoomFactor(ChangeType change) {
+        switch (change) {
+            case DECREASE:
+                if (this.zoomLevel != 1) {
+                this.zoomLevel -= 1;
+            } else {
+                this.zoomLevel = -1;
+            }
+                break;
+            case INCREASE:
+                if (this.zoomLevel != -1) {
+                this.zoomLevel += 1;
+            } else {
+                this.zoomLevel = 1;
+            }
+                break;
+        }
+
+        if (this.zoomLevel > 0) {
+            this.buffer.put(0, this.zoomLevel);
+            this.buffer.put(5, this.zoomLevel);
+            this.buffer.put(10, this.zoomLevel);
+        } else if (this.zoomLevel < 0) {
+            this.buffer.put(0, 1.0 / -this.zoomLevel);
+            this.buffer.put(5, 1.0 / -this.zoomLevel);
+            this.buffer.put(10, 1.0 / -this.zoomLevel);
+        }
+
+        this.initOpenGL();
+    }
+
     private void addPlanetsToTable() {
         int size = this.planets.size();
-        DefaultTableModel model = (DefaultTableModel)this.planetsTable.getModel();
+        DefaultTableModel model = (DefaultTableModel) this.planetsTable.getModel();
         String[] temp = new String[1];
-        
-        for(int i = 0; i < size; i++) {
+
+        for (int i = 0; i < size; i++) {
             temp[0] = this.planets.get(i).getLabel();
             model.addRow(temp);
         }
