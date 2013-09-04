@@ -22,6 +22,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     private final HashMap<String, Observer> observers = new HashMap<>();
 
     private final ArrayList<Rechner> integratoren = new ArrayList<>();
+    private ArrayList<Planet> data = new ArrayList<>();
     private Integratoren integrator;
     private double deltaT;
 
@@ -43,24 +44,25 @@ public class Rechenmodul implements Observer, Observable, Runnable {
         this.integratoren.add(new RungeKuttaKlassisch());
     }
 
-    public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, double maxT, ArrayList<Planet> startPlanets) {
+    public void setData(ArrayList<Planet> startPlanets) {
+        this.data = startPlanets;
+    }
+    
+    public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, ArrayList<Planet> startPlanets) {
         this.deltaT = deltaT;
-        int index = 0;
 
-        ArrayList<ArrayList<Planet>> erg = new ArrayList<>((int) (maxT / deltaT));
+        ArrayList<ArrayList<Planet>> erg = new ArrayList<>(500);
+        erg.add(startPlanets);
         erg.add(this.rechenschritt(startPlanets));
-        for (double t = deltaT; t <= maxT; t += deltaT) {
-            erg.add(this.rechenschritt(erg.get(index)));
+        for (int i = 1;; i++) {
+            erg.add(this.rechenschritt(erg.get(i)));
 
-            String collisions = Util.findCollisions(erg.get(index + 1));
+            String collisions = Util.findCollisions(erg.get(i + 1));
             if (!collisions.isEmpty()) {
                 System.out.println(collisions);
                 return erg;
             }
-            index++;
         }
-
-        return erg;
     }
 
     public ArrayList<Planet> rechenschritt(ArrayList<Planet> planeten) {
@@ -152,6 +154,8 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     @Override
     public void run() {
+        ArrayList<ArrayList<Planet>> computedValues = this.computeUntilT(this.deltaT, this.data);
+        this.sendPlanetsToObservers(Notifications.RESULT, computedValues);
     }
 
     @Override
@@ -164,21 +168,16 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
-        switch (type) {
-            case UPDATE:
-                this.rechenschritt(planets);
-                break;
-        }
+    public void sendPlanets(Notifications type, ArrayList<ArrayList<Planet>> planets) {
     }
 
     @Override
-    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets) {
+    public void sendPlanetsToObservers(Notifications type, ArrayList<ArrayList<Planet>> results) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(type, planets);
+            ((Observer) temp).sendPlanets(type, results);
         }
     }
 }

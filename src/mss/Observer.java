@@ -24,5 +24,5 @@ public interface Observer {
      * @param type
      * @param planets
      */
-    public void sendPlanets(Notifications type, ArrayList<Planet> planets);
+    public void sendPlanets(Notifications type, ArrayList<ArrayList<Planet>> planets);
 }

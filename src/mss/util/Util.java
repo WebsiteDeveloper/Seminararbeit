@@ -93,8 +93,8 @@ public class Util {
                     if(Planet.areColliding(planets.get(i), planets.get(j))) {
                         collisions += "Die Planeten " + planets.get(i).getLabel() + " und " + planets.get(j).getLabel() + " kollidieren.\n";
                         planets.remove(i);
-                        i--;
-                        j--;
+                        i = (i > 0) ? i-=1 : i;
+                        j = (j > 0) ? j-=1 : j; 
                     }
                 }
             }

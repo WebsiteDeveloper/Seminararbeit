@@ -18,9 +18,10 @@ public class Controller implements Runnable {
     private final HashMap<String, Thread> threads = new HashMap<>();
     
     public Controller() {
-        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
+        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.1);
         this.frame = new View("MSS");
-        this.frame.registerObserver("modul", this.modul);
+        
+        this.modul.registerObserver("view", frame);
         
         Thread modulThread = new Thread(this.modul);
         modulThread.setName("modul");
@@ -32,7 +33,7 @@ public class Controller implements Runnable {
     }
     
     public void start() {
-        this.threads.get("modul").start();
+        //this.threads.get("modul").start();
         this.threads.get("frame").start();
     }
     

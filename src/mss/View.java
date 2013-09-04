@@ -9,10 +9,15 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -20,7 +25,6 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JDialog;
@@ -30,6 +34,13 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JSlider;
+import javax.swing.ToolTipManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import mss.integratoren.Integratoren;
+import mss.integratoren.Rechenmodul;
 import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.ScreenshotSaver;
@@ -47,11 +58,17 @@ import org.lwjgl.opengl.GL11;
  *
  * @author Bernhard Sirlinger
  */
-public class View implements Observer, Observable, Runnable {
+public class View implements Observer, Runnable {
 
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
-
+    private final Rechenmodul modul;
+    private Thread rechenThread;
+    private long speed = 100;
+    private int currentIndex = 0;
+    private double deltaT = 0.01;
+    
+    
     private enum ChangeType {
         INCREASE, DECREASE
     };
@@ -60,31 +77,38 @@ public class View implements Observer, Observable, Runnable {
         UP, DOWN, LEFT, RIGHT
     };
 
+    private ArrayList<ArrayList<Planet>> results;
     private ArrayList<Planet> planets;
     private ArrayList<Planet> startPlanets;
+    
     private long time;
-    private final HashMap<String, Observer> observers = new HashMap<>();
     private String title;
     private final Canvas canvas = new Canvas();
     private final JFrame frame;
     private final JPanel panel = new JPanel();
-
+    private final JSlider slider = new JSlider();
 
     private boolean isPaused = true;
     private int zoomLevel = 1;
     private final DoubleBuffer buffer;
-
+    private boolean wasInitialized = false;
+    private boolean shouldReInit = false;
+    
     private String lastOpenedFilePath = "";
-    private final String empty = "";
-
     private final JMenuBar menuBar;
 
     public View(String title) {
+        JPopupMenu.setDefaultLightWeightPopupEnabled(false);
+        ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
+        
         this.planets = new ArrayList<>();
         this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
         this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
         this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D(), new org.lwjgl.util.Color(255, 255, 255)));
         this.startPlanets = (ArrayList<Planet>) this.planets.clone();
+        
+        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
+        this.modul.registerObserver("view", this);
         
         this.buffer = BufferUtils.createDoubleBuffer(16);
         this.initBuffer();
@@ -92,12 +116,24 @@ public class View implements Observer, Observable, Runnable {
         this.title = title;
         this.frame = new JFrame(title);
         
-        this.panel.setPreferredSize(new Dimension(160, 600));
+        this.slider.setEnabled(false);
+        this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
+        
+        this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        this.panel.setPreferredSize(new Dimension(800, 100));
         this.panel.setBackground(Color.red);
-
+        this.panel.add(this.slider);
+        
         this.addListeners();
 
         this.menuBar = new JMenuBar();
+        this.menuBar.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                System.out.println("Gained");
+                super.focusGained(e);
+            }
+        });
         this.frame.setJMenuBar(this.menuBar);
 
         JMenu fileMenu = new JMenu("File");
@@ -107,7 +143,6 @@ public class View implements Observer, Observable, Runnable {
         openFile.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers(Notifications.PAUSE, empty);
                 isPaused = true;
                 openFile();
                 canvas.requestFocus();
@@ -119,7 +154,9 @@ public class View implements Observer, Observable, Runnable {
         start.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers(Notifications.START, empty);
+                modul.setData(planets);
+                rechenThread = new Thread(modul);
+                rechenThread.start();
                 isPaused = false;
                 canvas.requestFocus();
             }
@@ -130,7 +167,10 @@ public class View implements Observer, Observable, Runnable {
         reset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyObservers(Notifications.RESET, empty);
+                planets = (ArrayList<Planet>) startPlanets.clone();
+                isPaused = true;
+                currentIndex = 0;
+                slider.setValue(0);
                 canvas.requestFocus();
             }
         });
@@ -141,11 +181,9 @@ public class View implements Observer, Observable, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isPaused) {
-                    notifyObservers(Notifications.PAUSE, empty);
                     isPaused = true;
                     ((JMenuItem) e.getSource()).setText("Restart");
                 } else {
-                    notifyObservers(Notifications.RESUME, empty);
                     isPaused = false;
                     ((JMenuItem) e.getSource()).setText("Pause");
                 }
@@ -153,6 +191,18 @@ public class View implements Observer, Observable, Runnable {
             }
         });
         fileMenu.add(pause);
+        
+        JMenuItem saveDataToFile = new JMenuItem("Save Current Data to File");
+        saveDataToFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(results != null) {
+                    System.out.println("Saving...");
+                }
+                canvas.requestFocus();
+            }
+        });
+        fileMenu.add(saveDataToFile);
 
         JMenuItem about = new JMenuItem("About");
         about.addActionListener(new ActionListener() {
@@ -160,7 +210,6 @@ public class View implements Observer, Observable, Runnable {
             public void actionPerformed(ActionEvent e) {
                 ((JMenuItem) e.getSource()).setName("");
                 if (!isPaused) {
-                    notifyObservers(Notifications.PAUSE, empty);
                     isPaused = true;
                     ((JMenuItem) e.getSource()).setName("selfPaused");
                 }
@@ -194,6 +243,18 @@ public class View implements Observer, Observable, Runnable {
     }
     
     private void addListeners() {
+        this.slider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider slider = (JSlider) e.getSource();
+                currentIndex = slider.getValue();
+                planets = results.get(currentIndex);
+                if(slider.isFocusOwner()) {
+                    isPaused = true;
+                }
+            }
+        });
+        
         this.canvas.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -205,6 +266,9 @@ public class View implements Observer, Observable, Runnable {
             @Override
             public void componentResized(ComponentEvent e) {
                 layout(e.getComponent().getWidth(), e.getComponent().getHeight());
+                if(wasInitialized) {
+                    shouldReInit = true;
+                }
             }
         });
 
@@ -212,19 +276,18 @@ public class View implements Observer, Observable, Runnable {
             private boolean wasAlreadyPaused;
 
             @Override
-            public void windowGainedFocus(WindowEvent e) {
+            public void windowActivated(WindowEvent e) {
                 if (!this.wasAlreadyPaused) {
-                    notifyObservers(Notifications.RESUME, empty);
                     isPaused = false;
                 }
                 canvas.requestFocusInWindow();
             }
-
+            
             @Override
-            public void windowLostFocus(WindowEvent e) {
+            public void windowDeactivated(WindowEvent e) {
                 if (!isPaused) {
                     isPaused = true;
-                    notifyObservers(Notifications.PAUSE, empty);
+                    this.wasAlreadyPaused = false;
                 } else {
                     this.wasAlreadyPaused = true;
                 }
@@ -239,11 +302,8 @@ public class View implements Observer, Observable, Runnable {
     }
     
     private void layout(int width, int height) {
-        this.panel.setSize((int) Math.floor(width * 0.2), height);
-        this.panel.setPreferredSize(this.panel.getSize());
-        this.canvas.setSize(width - this.panel.getWidth(), height);
-        this.canvas.setPreferredSize(this.canvas.getSize());
-        this.canvas.setLocation(this.panel.getWidth(), 0);
+        this.slider.setSize(width - 14, this.slider.getHeight());
+        this.slider.setPreferredSize(this.slider.getSize());
     }
 
     public void init() {
@@ -252,25 +312,29 @@ public class View implements Observer, Observable, Runnable {
             Keyboard.enableRepeatEvents(true);
             this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             this.frame.setLayout(new BorderLayout());
-            this.frame.add(this.canvas, BorderLayout.EAST);
-            this.frame.add(this.panel, BorderLayout.WEST);
+            this.frame.add(this.canvas, BorderLayout.CENTER);// , BorderLayout.EAST
+            this.frame.add(this.panel, BorderLayout.PAGE_END);// , BorderLayout.WEST
             this.frame.setPreferredSize(new Dimension(1024, 786));
             this.frame.setMinimumSize(new Dimension(800, 600));
             this.frame.pack();
 
             this.frame.setVisible(true);
-
+            
             Display.setTitle(this.title);
             Display.setResizable(true);
             Display.setFullscreen(false);
             Display.create();
             this.initOpenGL();
-
+            this.wasInitialized = true;
             LWJGLRenderer renderer = new LWJGLRenderer();
 
             Dimension newDim;
 
             while (!Display.isCloseRequested() && !View.closeRequested) {
+                if(this.shouldReInit) {
+                    this.initOpenGL();
+                    this.shouldReInit = false;
+                }
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
                 newDim = newCanvasSize.getAndSet(null);
                 checkKeyInput();
@@ -283,6 +347,17 @@ public class View implements Observer, Observable, Runnable {
                     this.planets.get(i).draw2D();
                 }
 
+                if(!this.isPaused && this.results != null && this.currentIndex < this.results.size() - 1 && this.getDelta()/this.deltaT >= this.speed) {
+                    this.planets = this.results.get(this.currentIndex);
+                    int add = (int)(1/deltaT);
+                    if(add == 0) {
+                        add = 1;
+                    }
+                    this.time = this.getTime();
+                    this.currentIndex += add;
+                    this.slider.setValue(this.slider.getValue() + add);
+                }
+                
                 checkKeyInput();
                 checkMouseInput();
                 Display.update();
@@ -320,14 +395,22 @@ public class View implements Observer, Observable, Runnable {
                 case Keyboard.KEY_RIGHT:
                     this.changeTranslationMatrix(Directions.RIGHT);
                     break;
-                case Keyboard.KEY_R:
+                case Keyboard.KEY_0:
+                    Keyboard.poll();
+                    if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+                        this.resetScaleMatrix();
+                    }
+                    break;
+                case Keyboard.KEY_C:
                     this.resetTranslationMatrix();
                     break;
                 case Keyboard.KEY_ADD:
-                    System.out.println("Add");
+                    if(this.speed >= 5/this.deltaT) {
+                        this.speed -= 5/this.deltaT;
+                    }
                     break;
                 case Keyboard.KEY_SUBTRACT:
-                    System.out.println("Subtract");
+                    this.speed += 5/this.deltaT;
                     break;
             }
         }
@@ -379,7 +462,6 @@ public class View implements Observer, Observable, Runnable {
 
             @Override
             public void windowDeactivated(WindowEvent e) {
-                notifyObservers(Notifications.RESUME, "");
                 isPaused = false;
                 e.getWindow().dispose();
             }
@@ -414,14 +496,16 @@ public class View implements Observer, Observable, Runnable {
             this.lastOpenedFilePath = selectedFile.getAbsolutePath();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
             if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
-                this.sendPlanetsToObservers(Notifications.RESET, (ArrayList<Planet>) dataFromDataFile.get("Planets"));
-                this.notifyObservers(Notifications.DELTA_CHANGE, "" + dataFromDataFile.get("deltaT"));
-                this.notifyObservers(Notifications.RESET, empty);
+                this.planets = (ArrayList<Planet>) dataFromDataFile.get("Planets");
+                this.startPlanets = (ArrayList<Planet>) this.planets.clone();
+                this.deltaT = (double)dataFromDataFile.get("deltaT");
+                this.modul.setDeltaT(this.deltaT);
+                this.speed = (long)(1/this.deltaT);
             } else {
                 this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
             }
+            this.isPaused = true;
         } else {
-            notifyObservers(Notifications.RESUME, empty);
             this.isPaused = false;
         }
     }
@@ -444,26 +528,6 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void registerObserver(String key, Observer observer) {
-        this.observers.put(key, observer);
-    }
-
-    @Override
-    public void removeObserver(String key) {
-        this.observers.remove(key);
-    }
-
-    @Override
-    public void notifyObservers(Notifications type, String data) {
-        Collection<Observer> values = this.observers.values();
-        Object[] toArray = values.toArray();
-
-        for (Object temp : toArray) {
-            ((Observer) temp).notify(type, data);
-        }
-    }
-
-    @Override
     public void run() {
         this.init();
     }
@@ -473,30 +537,19 @@ public class View implements Observer, Observable, Runnable {
     }
 
     @Override
-    public void sendPlanets(Notifications type, ArrayList<Planet> planets) {
-        switch (type) {
-            case DISPLAY:
-                this.planets = planets;
-                this.isPaused = false;
-                break;
-            case UPDATE:
-                this.planets = planets;
-                this.isPaused = false;
-                break;
-        }
-
+    public void sendPlanets(Notifications type, ArrayList<ArrayList<Planet>> planets) {
+        System.out.println("Sent");
+        this.results = planets;
+        this.initSlider();
     }
 
-    @Override
-    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets) {
-        Collection<Observer> values = this.observers.values();
-        Object[] toArray = values.toArray();
-
-        for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(type, planets);
-        }
+    private void initSlider() {
+        this.slider.setMaximum(this.results.size() - 2);
+        this.slider.setMinorTickSpacing(1);
+        this.slider.setValue(0);
+        this.slider.setEnabled(true);
     }
-
+    
     private void checkMouseInput() {
         int delta = Mouse.getDWheel();
 
@@ -507,6 +560,14 @@ public class View implements Observer, Observable, Runnable {
         }
     }
 
+    private void resetScaleMatrix() {
+        this.zoomLevel = 0;
+        this.buffer.put(0, this.zoomLevel);
+        this.buffer.put(5, this.zoomLevel);
+        this.buffer.put(10, this.zoomLevel);
+        this.initOpenGL();
+    }
+    
     private void resetTranslationMatrix() {
         this.buffer.put(12, 0);
         this.buffer.put(13, 0);

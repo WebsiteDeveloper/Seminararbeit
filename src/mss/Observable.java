@@ -16,5 +16,5 @@ public interface Observable {
     public void registerObserver(String key, Observer observer);
     public void removeObserver(String key);
     public void notifyObservers(Notifications type, String data);
-    public void sendPlanetsToObservers(Notifications type, ArrayList<Planet> planets);
+    public void sendPlanetsToObservers(Notifications type, ArrayList<ArrayList<Planet>> planets);
 }
