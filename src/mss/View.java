@@ -10,8 +10,6 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -28,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -37,7 +36,10 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
+import javax.swing.JTabbedPane;
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mss.integratoren.Integratoren;
@@ -93,20 +95,35 @@ public class View implements Observer, Runnable {
     private final JButton playButton;
     private final JButton startCalculationButton;
     private final JButton resetButton;
+    private final JButton takeScreenshotButton;
 
+    private final JTabbedPane tabbedPane;
+    private final JPanel planetsPanel = new JPanel();
+    private final JPanel currentDataPanel = new JPanel();
+    private final JPanel settingsPanel = new JPanel();
+    
+    private final JComboBox<String> planetsBox;
+    private final JComboBox<String> planetsClonedBox;
+    
     private boolean isPaused = true;
     private int zoomLevel = 1;
     private final DoubleBuffer buffer;
     private boolean wasInitialized = false;
     private boolean shouldReInit = false;
-
+    private boolean shouldTakeScreenshot = false;
+    
     private String lastOpenedFilePath = "";
     private final JMenuBar menuBar;
 
     public View(String title) {
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
-
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            ex.printStackTrace();
+        }
+        
         this.planets = new ArrayList<>();
         this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
         this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
@@ -126,20 +143,38 @@ public class View implements Observer, Runnable {
         this.playButton = new JButton("Play");
         this.pauseButton = new JButton("Pause");
         this.resetButton = new JButton("Reset");
+        this.takeScreenshotButton = new JButton("Take Screenshot");
 
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
 
         this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         this.panel.setPreferredSize(new Dimension(800, 100));
-        this.panel.setBackground(Color.red);
+        this.panel.setBackground(Color.LIGHT_GRAY);
 
         this.panel.add(this.slider);
         this.panel.add(this.startCalculationButton);
         this.panel.add(this.playButton);
         this.panel.add(this.pauseButton);
         this.panel.add(this.resetButton);
+        this.panel.add(this.takeScreenshotButton);
 
+        this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
+        this.tabbedPane.setPreferredSize(new Dimension(200, this.tabbedPane.getHeight()));
+        this.tabbedPane.addTab("Start Values", this.planetsPanel);
+        this.tabbedPane.addTab("Current Values", this.currentDataPanel);
+        this.tabbedPane.addTab("Settings", this.settingsPanel);
+        
+        this.planetsPanel.setLayout(new FlowLayout());
+        
+        this.planetsBox = new JComboBox<>();
+        this.planetsBox.addItem("Choose a Planet...");
+        this.planetsClonedBox = new JComboBox<>();
+        this.planetsClonedBox.addItem("Choose a Planet...");
+        
+        this.planetsPanel.add(this.planetsBox, FlowLayout.LEFT);
+        this.currentDataPanel.add(this.planetsClonedBox);
+        
         this.addListeners();
 
         this.menuBar = new JMenuBar();
@@ -335,7 +370,7 @@ public class View implements Observer, Runnable {
         this.startCalculationButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                modul.setData(planets);
+                modul.setData(startPlanets);
                 rechenThread = new Thread(modul);
                 rechenThread.start();
                 isPaused = false;
@@ -355,6 +390,14 @@ public class View implements Observer, Runnable {
                 canvas.requestFocus();
             }
         });
+        
+        this.takeScreenshotButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                shouldTakeScreenshot = true;
+                canvas.requestFocus();
+            }
+        });
     }
 
     private void layout(int width, int height) {
@@ -363,13 +406,16 @@ public class View implements Observer, Runnable {
     }
 
     public void init() {
+        updateComboBoxes();
+        
         try {
             Display.setParent(this.canvas);
             Keyboard.enableRepeatEvents(true);
             this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             this.frame.setLayout(new BorderLayout());
-            this.frame.add(this.canvas, BorderLayout.CENTER);// , BorderLayout.EAST
-            this.frame.add(this.panel, BorderLayout.PAGE_END);// , BorderLayout.WEST
+            this.frame.add(this.tabbedPane, BorderLayout.LINE_START);
+            this.frame.add(this.canvas, BorderLayout.CENTER);
+            this.frame.add(this.panel, BorderLayout.PAGE_END);
             this.frame.setPreferredSize(new Dimension(1024, 786));
             this.frame.setMinimumSize(new Dimension(800, 600));
             this.frame.pack();
@@ -391,6 +437,12 @@ public class View implements Observer, Runnable {
                     this.initOpenGL();
                     this.shouldReInit = false;
                 }
+                
+                if (this.shouldTakeScreenshot) {
+                    this.saveScreenshot();
+                    this.shouldTakeScreenshot = false;
+                }
+                
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
                 newDim = newCanvasSize.getAndSet(null);
                 checkKeyInput();
@@ -560,6 +612,7 @@ public class View implements Observer, Runnable {
                 this.deltaT = (double) dataFromDataFile.get("deltaT");
                 this.modul.setDeltaT(this.deltaT);
                 this.speed = (long) (1 / this.deltaT);
+                updateComboBoxes();
             } else {
                 this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
             }
@@ -569,6 +622,17 @@ public class View implements Observer, Runnable {
         }
     }
 
+    private void updateComboBoxes() {
+        int size = this.startPlanets.size();
+        String temp;
+        
+        for(int i = 0; i < size; i++) {
+            temp = this.startPlanets.get(i).getLabel();
+            this.planetsBox.addItem(temp);
+            this.planetsClonedBox.addItem(temp);
+        }
+    }
+    
     private void showInvalidFileDialog(String errors) {
         System.out.println(errors);
     }
