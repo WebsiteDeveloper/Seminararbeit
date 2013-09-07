@@ -30,6 +30,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -101,17 +102,20 @@ public class View implements Observer, Runnable {
     private final JPanel planetsPanel = new JPanel();
     private final JPanel currentDataPanel = new JPanel();
     private final JPanel settingsPanel = new JPanel();
-    
+
     private final JComboBox<String> planetsBox;
     private final JComboBox<String> planetsClonedBox;
-    
+
+    private final JLabel integratorLabel;
+    private final JComboBox<Integratoren> integratorBox;
+
     private boolean isPaused = true;
     private int zoomLevel = 1;
     private final DoubleBuffer buffer;
     private boolean wasInitialized = false;
     private boolean shouldReInit = false;
     private boolean shouldTakeScreenshot = false;
-    
+
     private String lastOpenedFilePath = "";
     private final JMenuBar menuBar;
 
@@ -121,9 +125,8 @@ public class View implements Observer, Runnable {
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            ex.printStackTrace();
         }
-        
+
         this.planets = new ArrayList<>();
         this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
         this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
@@ -164,17 +167,27 @@ public class View implements Observer, Runnable {
         this.tabbedPane.addTab("Start Values", this.planetsPanel);
         this.tabbedPane.addTab("Current Values", this.currentDataPanel);
         this.tabbedPane.addTab("Settings", this.settingsPanel);
-        
+
         this.planetsPanel.setLayout(new FlowLayout());
-        
+
         this.planetsBox = new JComboBox<>();
         this.planetsBox.addItem("Choose a Planet...");
         this.planetsClonedBox = new JComboBox<>();
         this.planetsClonedBox.addItem("Choose a Planet...");
-        
+
+        this.integratorLabel = new JLabel("Numerical Method:");
+
+        this.integratorBox = new JComboBox<>();
+        this.integratorBox.addItem(Integratoren.EULER);
+        this.integratorBox.addItem(Integratoren.LEAPFROG);
+        this.integratorBox.addItem(Integratoren.RUNGE_KUTTA_KLASSISCH);
+        this.integratorBox.setSelectedIndex(2);
+
         this.planetsPanel.add(this.planetsBox, FlowLayout.LEFT);
         this.currentDataPanel.add(this.planetsClonedBox);
-        
+        this.settingsPanel.add(this.integratorLabel);
+        this.settingsPanel.add(this.integratorBox);
+
         this.addListeners();
 
         this.menuBar = new JMenuBar();
@@ -390,12 +403,19 @@ public class View implements Observer, Runnable {
                 canvas.requestFocus();
             }
         });
-        
+
         this.takeScreenshotButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 shouldTakeScreenshot = true;
                 canvas.requestFocus();
+            }
+        });
+
+        this.integratorBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                modul.setIntegrator((Integratoren) ((JComboBox) e.getSource()).getSelectedItem());
             }
         });
     }
@@ -407,7 +427,7 @@ public class View implements Observer, Runnable {
 
     public void init() {
         updateComboBoxes();
-        
+
         try {
             Display.setParent(this.canvas);
             Keyboard.enableRepeatEvents(true);
@@ -437,12 +457,12 @@ public class View implements Observer, Runnable {
                     this.initOpenGL();
                     this.shouldReInit = false;
                 }
-                
+
                 if (this.shouldTakeScreenshot) {
                     this.saveScreenshot();
                     this.shouldTakeScreenshot = false;
                 }
-                
+
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
                 newDim = newCanvasSize.getAndSet(null);
                 checkKeyInput();
@@ -625,14 +645,14 @@ public class View implements Observer, Runnable {
     private void updateComboBoxes() {
         int size = this.startPlanets.size();
         String temp;
-        
-        for(int i = 0; i < size; i++) {
+
+        for (int i = 0; i < size; i++) {
             temp = this.startPlanets.get(i).getLabel();
             this.planetsBox.addItem(temp);
             this.planetsClonedBox.addItem(temp);
         }
     }
-    
+
     private void showInvalidFileDialog(String errors) {
         System.out.println(errors);
     }
