@@ -660,6 +660,8 @@ public class View implements Observer, Runnable {
                 this.startPlanets = (ArrayList<Planet>) this.planets.clone();
                 this.deltaT = (double) dataFromDataFile.get("deltaT");
                 this.modul.setDeltaT(this.deltaT);
+                this.modul.setIntegrator((Integratoren)dataFromDataFile.get("Integrator"));
+                this.integratorBox.setSelectedItem(this.modul.getIntegrator());
                 this.speed = (long) (1 / this.deltaT);
                 updateComboBoxes();
             } else {

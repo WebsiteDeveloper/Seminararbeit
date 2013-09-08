@@ -180,4 +180,8 @@ public class Rechenmodul implements Observer, Observable, Runnable {
             ((Observer) temp).sendPlanets(type, results);
         }
     }
+
+    public Integratoren getIntegrator() {
+        return this.integrator;
+    }
 }

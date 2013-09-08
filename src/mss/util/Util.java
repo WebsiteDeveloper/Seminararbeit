@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import mss.integratoren.Integratoren;
 import org.lwjgl.util.Color;
 
 /**
@@ -59,12 +60,22 @@ public class Util {
             lines = data.split("[\n]|[\r]");
         }
         erg.put("Error", "");
+        erg.put("Integrator", Integratoren.RUNGE_KUTTA_KLASSISCH);
+        
         for(int i = 0; i < lines.length; i++) {
             if(!lines[i].matches("^[ ]*$") && !lines[i].trim().startsWith("//")) {
-                if(lines[i].trim().matches("^(deltaT) [0-9]+[\\\\.]{0,1}[0-9]*$")) {
-                    String[] temp = lines[i].split(" ");
-                    erg.put("deltaT", Double.parseDouble(temp[1]));
-                } else if (lines[i].trim().startsWith("Body")) {
+                lines[i] = lines[i].trim();
+                if(lines[i].startsWith("Integrator ")) {
+                    String temp = lines[i].split(" ")[1];
+                    try {
+                        erg.put("Integrator", Integratoren.valueOf(temp));
+                    } catch (IllegalArgumentException ex) {
+                        erg.put("Error", erg.get("Error") + " Invalid Integrator setting on line " + (i+1) + "\n");
+                    }
+                } else if(lines[i].matches("^(deltaT) [0-9]+[\\\\.]{0,1}[0-9]*$")) {
+                    String temp = lines[i].split(" ")[1];
+                    erg.put("deltaT", Double.parseDouble(temp));
+                } else if (lines[i].startsWith("Body")) {
                     String[] temp =  lines[i].split(" ");
                     planets.add(new Planet(temp[1], new Vektor2D(Double.parseDouble(temp[2]), Double.parseDouble(temp[3])), Double.parseDouble(temp[4]), Double.parseDouble(temp[5]), new Vektor2D(Double.parseDouble(temp[6]), Double.parseDouble(temp[7])), new Color(Integer.parseInt(temp[8]), Integer.parseInt(temp[9]), Integer.parseInt(temp[10]))));
                 } else {
