@@ -673,6 +673,8 @@ public class View implements Observer, Runnable {
     }
 
     private void saveProject() {
+        boolean wasSelfPaused = !this.isPaused;
+        
         this.isPaused = true;
         
         JFileChooser fileChooser;
@@ -691,6 +693,10 @@ public class View implements Observer, Runnable {
             
             ProjectFileSaver saver = new ProjectFileSaver(this.lastSavedFilePath, this.startPlanets, this.modul.getIntegrator(), this.deltaT);
             saver.start();
+        }
+        
+        if(wasSelfPaused) {
+            this.isPaused = false;
         }
     }
     
