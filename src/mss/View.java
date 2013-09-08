@@ -34,10 +34,12 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -108,7 +110,9 @@ public class View implements Observer, Runnable {
 
     private final JLabel integratorLabel;
     private final JComboBox<Integratoren> integratorBox;
-
+    private final JLabel deltatLabel;
+    private final JTextField deltatField;
+    
     private boolean isPaused = true;
     private int zoomLevel = 1;
     private final DoubleBuffer buffer;
@@ -174,19 +178,26 @@ public class View implements Observer, Runnable {
         this.planetsBox.addItem("Choose a Planet...");
         this.planetsClonedBox = new JComboBox<>();
         this.planetsClonedBox.addItem("Choose a Planet...");
-
+        
+        /*Settings*/
         this.integratorLabel = new JLabel("Numerical Method:");
-
         this.integratorBox = new JComboBox<>();
         this.integratorBox.addItem(Integratoren.EULER);
         this.integratorBox.addItem(Integratoren.LEAPFROG);
         this.integratorBox.addItem(Integratoren.RUNGE_KUTTA_KLASSISCH);
         this.integratorBox.setSelectedIndex(2);
-
-        this.planetsPanel.add(this.planetsBox, FlowLayout.LEFT);
-        this.currentDataPanel.add(this.planetsClonedBox);
+        
+        this.deltatLabel = new JLabel("Delta t:");
+        this.deltatField = new JTextField("" + this.deltaT);
+        
         this.settingsPanel.add(this.integratorLabel);
         this.settingsPanel.add(this.integratorBox);
+        this.settingsPanel.add(this.deltatLabel);
+        this.settingsPanel.add(this.deltatField);
+        /*Settings*/
+        
+        this.planetsPanel.add(this.planetsBox, FlowLayout.LEFT);
+        this.currentDataPanel.add(this.planetsClonedBox);
 
         this.addListeners();
 
@@ -416,6 +427,24 @@ public class View implements Observer, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 modul.setIntegrator((Integratoren) ((JComboBox) e.getSource()).getSelectedItem());
+            }
+        });
+        
+        this.deltatField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)e.getSource()).getText();
+                if(currentValue.contains(",")) {
+                    currentValue = currentValue.replace(',', '.');
+                }
+                
+                try {
+                    deltaT = Double.parseDouble(currentValue);
+                    modul.setDeltaT(deltaT);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for deltaT is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    deltatField.setText("" + deltaT);
+                }
             }
         });
     }
