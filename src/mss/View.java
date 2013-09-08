@@ -64,10 +64,12 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.filechooser.FileFilter;
 import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
 import mss.util.Notifications;
 import mss.util.Planet;
+import mss.util.ProjectFileSaver;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
 import mss.util.Vektor2D;
@@ -118,6 +120,7 @@ public class View implements Observer, Runnable {
     private final JButton startCalculationButton;
     private final JButton resetButton;
     private final JButton takeScreenshotButton;
+    private final JButton saveProjectButton;
 
     private final JTabbedPane tabbedPane;
     private final JPanel planetsPanel = new JPanel();
@@ -140,6 +143,7 @@ public class View implements Observer, Runnable {
     private boolean shouldTakeScreenshot = false;
 
     private String lastOpenedFilePath = "";
+    private String lastSavedFilePath = "";
     private final JMenuBar menuBar;
 
     public View(String title) {
@@ -170,6 +174,7 @@ public class View implements Observer, Runnable {
         this.pauseButton = new JButton("Pause");
         this.resetButton = new JButton("Reset");
         this.takeScreenshotButton = new JButton("Take Screenshot");
+        this.saveProjectButton = new JButton("Save Project");
 
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
@@ -184,6 +189,7 @@ public class View implements Observer, Runnable {
         this.panel.add(this.pauseButton);
         this.panel.add(this.resetButton);
         this.panel.add(this.takeScreenshotButton);
+        this.panel.add(this.saveProjectButton);
 
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
         this.tabbedPane.setPreferredSize(new Dimension(200, this.tabbedPane.getHeight()));
@@ -441,6 +447,14 @@ public class View implements Observer, Runnable {
                 canvas.requestFocus();
             }
         });
+        
+        this.saveProjectButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveProject();
+                canvas.requestFocus();
+            }
+        });
 
         this.integratorBox.addActionListener(new ActionListener() {
             @Override
@@ -658,6 +672,28 @@ public class View implements Observer, Runnable {
         saver.start();
     }
 
+    private void saveProject() {
+        this.isPaused = true;
+        
+        JFileChooser fileChooser;
+
+        if (this.lastOpenedFilePath.isEmpty()) {
+            fileChooser = new JFileChooser();
+        } else {
+            fileChooser = new JFileChooser(this.lastOpenedFilePath);
+        }
+
+        int state = fileChooser.showSaveDialog(this.frame);
+        
+        if(state == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            this.lastSavedFilePath = selectedFile.getAbsolutePath();
+            
+            ProjectFileSaver saver = new ProjectFileSaver(this.lastSavedFilePath, this.startPlanets, this.modul.getIntegrator(), this.deltaT);
+            saver.start();
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     private void openFile() {
         JFileChooser fileChooser;
