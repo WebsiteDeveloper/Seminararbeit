@@ -64,7 +64,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
 import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
 import mss.util.Notifications;
@@ -144,6 +143,7 @@ public class View implements Observer, Runnable {
 
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
+    private final String standardBoxEntry;
     private final JMenuBar menuBar;
 
     public View(String title) {
@@ -199,10 +199,12 @@ public class View implements Observer, Runnable {
 
         this.planetsPanel.setLayout(new FlowLayout());
 
+        this.standardBoxEntry = "Choose a Planet...";
+        
         this.planetsBox = new JComboBox<>();
-        this.planetsBox.addItem("Choose a Planet...");
+        this.planetsBox.addItem(this.standardBoxEntry);
         this.planetsClonedBox = new JComboBox<>();
-        this.planetsClonedBox.addItem("Choose a Planet...");
+        this.planetsClonedBox.addItem(this.standardBoxEntry);
         
         /*Settings*/
         this.integratorLabel = new JLabel("Numerical Method:");
@@ -738,11 +740,19 @@ public class View implements Observer, Runnable {
         int size = this.startPlanets.size();
         String temp;
 
+        this.planetsBox.removeAllItems();
+        this.planetsClonedBox.removeAllItems();
+        this.planetsBox.addItem(this.standardBoxEntry);
+        this.planetsClonedBox.addItem(this.standardBoxEntry);
+        
         for (int i = 0; i < size; i++) {
             temp = this.startPlanets.get(i).getLabel();
             this.planetsBox.addItem(temp);
             this.planetsClonedBox.addItem(temp);
         }
+        
+        this.planetsBox.setSelectedIndex(0);
+        this.planetsClonedBox.setSelectedIndex(0);
     }
 
     private void showInvalidFileDialog(String errors) {
