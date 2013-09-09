@@ -81,6 +81,9 @@ public class Rechenmodul implements Observer, Observable, Runnable {
                 System.out.println(collisions);
                 return erg;
             }
+            if(i > 1000/deltaT) {
+                return erg;
+            }
         }
     }
 

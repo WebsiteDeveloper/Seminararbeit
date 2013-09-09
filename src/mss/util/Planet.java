@@ -114,6 +114,10 @@ public class Planet {
         return "Planet " + this.label + " " + this.coords.getX() + " " + this.coords.getY() + " " + this.mass + " " + this.radix + " " + this.v.getX() + " " + this.v.getY() + " " + this.color.getRed() + " " + this.color.getGreen() + " " + this.color.getBlue() + "  -  " + super.toString();
     }
     
+    public String getDataString(String separator) {
+        return this.label + separator + this.coords.getX() + separator + this.coords.getY() + separator + this.mass + separator + this.radix + separator + this.v.getX() + separator + this.v.getY();
+    }
+    
     public static boolean areColliding(Planet planet1, Planet planet2) {
         double x1 = planet1.getCoords().getX(),
                y1 = planet1.getCoords().getY(),

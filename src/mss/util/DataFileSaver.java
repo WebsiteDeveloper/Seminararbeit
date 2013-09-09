@@ -23,10 +23,48 @@
  */
 package mss.util;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+
 /**
  *
  * @author Bernhard Sirlinger
  */
 public class DataFileSaver extends Thread {
-    private double deltaT;
+    private final double deltaT;
+    private final ArrayList<ArrayList<Planet>> results;
+    private final String filePath;
+
+    public DataFileSaver(String filePath, double deltaT, ArrayList<ArrayList<Planet>> results) {
+        this.deltaT = deltaT;
+        this.results = results;
+        this.filePath = filePath;
+    }
+
+    @Override
+    public void run() {
+        File file = new File(this.filePath); // The file to save to.
+
+        Charset charset = Charset.forName("UTF-8");
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
+            int size = this.results.size();
+            String temp;
+            for(int i = 0; i < size; i++) {
+                temp = "" + this.deltaT * i;
+                for(int j = 0; j < this.results.get(i).size(); j++) {
+                    Planet tmp = this.results.get(i).get(j);
+                    
+                    temp += " " + tmp.getDataString(" ");
+                }
+                temp += "\n";
+                writer.write(temp);
+            }
+        } catch (IOException x) {
+            System.err.format("IOException: %s%n", x);
+        }      
+    }
 }

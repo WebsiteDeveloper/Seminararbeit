@@ -66,6 +66,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
+import mss.util.DataFileSaver;
 import mss.util.Notifications;
 import mss.util.Planet;
 import mss.util.ProjectFileSaver;
@@ -120,6 +121,7 @@ public class View implements Observer, Runnable {
     private final JButton resetButton;
     private final JButton takeScreenshotButton;
     private final JButton saveProjectButton;
+    private final JButton saveDataButton;
 
     private final JTabbedPane tabbedPane;
     private final JPanel planetsPanel = new JPanel();
@@ -143,6 +145,7 @@ public class View implements Observer, Runnable {
 
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
+    private String lastSavedDataFilePath = "";
     private final String standardBoxEntry;
     private final JMenuBar menuBar;
 
@@ -175,6 +178,7 @@ public class View implements Observer, Runnable {
         this.resetButton = new JButton("Reset");
         this.takeScreenshotButton = new JButton("Take Screenshot");
         this.saveProjectButton = new JButton("Save Project");
+        this.saveDataButton = new JButton("Save Computed Data");
 
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
@@ -190,7 +194,8 @@ public class View implements Observer, Runnable {
         this.panel.add(this.resetButton);
         this.panel.add(this.takeScreenshotButton);
         this.panel.add(this.saveProjectButton);
-
+        this.panel.add(this.saveDataButton);
+        
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
         this.tabbedPane.setPreferredSize(new Dimension(200, this.tabbedPane.getHeight()));
         this.tabbedPane.addTab("Start Values", this.planetsPanel);
@@ -258,6 +263,7 @@ public class View implements Observer, Runnable {
             public void actionPerformed(ActionEvent e) {
                 modul.setData(planets);
                 rechenThread = new Thread(modul);
+                rechenThread.setDaemon(true);
                 rechenThread.start();
                 isPaused = false;
                 canvas.requestFocus();
@@ -454,6 +460,14 @@ public class View implements Observer, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveProject();
+                canvas.requestFocus();
+            }
+        });
+        
+        this.saveDataButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveData();
                 canvas.requestFocus();
             }
         });
@@ -694,6 +708,38 @@ public class View implements Observer, Runnable {
             this.lastSavedFilePath = selectedFile.getAbsolutePath();
             
             ProjectFileSaver saver = new ProjectFileSaver(this.lastSavedFilePath, this.startPlanets, this.modul.getIntegrator(), this.deltaT);
+            saver.start();
+        }
+        
+        if(wasSelfPaused) {
+            this.isPaused = false;
+        }
+    }
+    
+    private void saveData() {
+        if(this.results == null) {
+            return;
+        }
+        
+        boolean wasSelfPaused = !this.isPaused;
+        
+        this.isPaused = true;
+        
+        JFileChooser fileChooser;
+
+        if (this.lastSavedDataFilePath.isEmpty()) {
+            fileChooser = new JFileChooser();
+        } else {
+            fileChooser = new JFileChooser(this.lastSavedDataFilePath);
+        }
+
+        int state = fileChooser.showSaveDialog(this.frame);
+        
+        if(state == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            this.lastSavedDataFilePath = selectedFile.getAbsolutePath();
+            
+            DataFileSaver saver = new DataFileSaver(this.lastSavedDataFilePath, this.deltaT, this.results);
             saver.start();
         }
         
