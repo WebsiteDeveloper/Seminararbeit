@@ -29,6 +29,8 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -45,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -59,6 +62,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -122,6 +126,8 @@ public class View implements Observer, Runnable {
     private final JButton takeScreenshotButton;
     private final JButton saveProjectButton;
     private final JButton saveDataButton;
+    private final JButton zoomInButton;
+    private final JButton zoomOutButton;
 
     private final JTabbedPane tabbedPane;
     private final JPanel planetsPanel = new JPanel();
@@ -131,11 +137,25 @@ public class View implements Observer, Runnable {
     private final JComboBox<String> planetsBox;
     private final JComboBox<String> planetsClonedBox;
 
+    private final JLabel vLabel;
+    private final JTextField vxField;
+    private final JTextField vyField;
+    private final JLabel coordsLabel;
+    private final JTextField xField;
+    private final JTextField yField;
+    private final JLabel massLabel;
+    private final JTextField massField;
+    private final JLabel radixLabel;
+    private final JTextField radixField;
+    private final JLabel colorPreviewLabel;
+    private final JColorChooser colorChooser;
+    private final JPanel colorChooserPreview;
+    
     private final JLabel integratorLabel;
     private final JComboBox<Integratoren> integratorBox;
     private final JLabel deltatLabel;
     private final JTextField deltatField;
-    
+
     private boolean isPaused = true;
     private int zoomLevel = 1;
     private final DoubleBuffer buffer;
@@ -149,6 +169,10 @@ public class View implements Observer, Runnable {
     private final String standardBoxEntry;
     private final JMenuBar menuBar;
 
+    /**
+     *
+     * @param title
+     */
     public View(String title) {
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
@@ -164,7 +188,6 @@ public class View implements Observer, Runnable {
         this.startPlanets = (ArrayList<Planet>) this.planets.clone();
 
         this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
-        this.modul.registerObserver("view", this);
 
         this.buffer = BufferUtils.createDoubleBuffer(16);
         this.initBuffer();
@@ -179,6 +202,19 @@ public class View implements Observer, Runnable {
         this.takeScreenshotButton = new JButton("Take Screenshot");
         this.saveProjectButton = new JButton("Save Project");
         this.saveDataButton = new JButton("Save Computed Data");
+        this.zoomInButton = new JButton("+");
+        this.zoomOutButton = new JButton("-");
+
+        /* Prevent Focus jumping */
+        this.startCalculationButton.setFocusable(false);
+        this.playButton.setFocusable(false);
+        this.pauseButton.setFocusable(false);
+        this.resetButton.setFocusable(false);
+        this.takeScreenshotButton.setFocusable(false);
+        this.saveProjectButton.setFocusable(false);
+        this.saveDataButton.setFocusable(false);
+        this.zoomInButton.setFocusable(false);
+        this.zoomOutButton.setFocusable(false);
 
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
@@ -195,21 +231,45 @@ public class View implements Observer, Runnable {
         this.panel.add(this.takeScreenshotButton);
         this.panel.add(this.saveProjectButton);
         this.panel.add(this.saveDataButton);
-        
+        this.panel.add(this.zoomInButton);
+        this.panel.add(this.zoomOutButton);
+
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
         this.tabbedPane.setPreferredSize(new Dimension(200, this.tabbedPane.getHeight()));
         this.tabbedPane.addTab("Start Values", this.planetsPanel);
         this.tabbedPane.addTab("Current Values", this.currentDataPanel);
         this.tabbedPane.addTab("Settings", this.settingsPanel);
 
-        this.planetsPanel.setLayout(new FlowLayout());
+        this.planetsPanel.setLayout(new GridBagLayout());
 
         this.standardBoxEntry = "Choose a Planet...";
-        
+
         this.planetsBox = new JComboBox<>();
         this.planetsBox.addItem(this.standardBoxEntry);
         this.planetsClonedBox = new JComboBox<>();
         this.planetsClonedBox.addItem(this.standardBoxEntry);
+
+        this.vLabel = new JLabel("v in m/s");
+        this.vLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.vLabel.setVerticalAlignment(SwingConstants.CENTER);
+        this.vxField = new JTextField();
+        this.vyField = new JTextField();
+        this.coordsLabel = new JLabel("Coordinates: ");
+        this.coordsLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.coordsLabel.setVerticalAlignment(SwingConstants.CENTER);
+        this.xField = new JTextField();
+        this.yField = new JTextField();
+        this.massLabel = new JLabel("Mass: ");
+        this.massLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.massLabel.setVerticalAlignment(SwingConstants.CENTER);
+        this.massField = new JTextField();
+        this.radixLabel = new JLabel("Radix: ");
+        this.radixLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.radixLabel.setVerticalAlignment(SwingConstants.CENTER);
+        this.radixField = new JTextField();
+        this.colorPreviewLabel = new JLabel("Color: ");
+        this.colorChooserPreview = new JPanel();
+        this.colorChooser = new JColorChooser();
         
         /*Settings*/
         this.integratorLabel = new JLabel("Numerical Method:");
@@ -218,17 +278,51 @@ public class View implements Observer, Runnable {
         this.integratorBox.addItem(Integratoren.LEAPFROG);
         this.integratorBox.addItem(Integratoren.RUNGE_KUTTA_KLASSISCH);
         this.integratorBox.setSelectedIndex(2);
-        
+
         this.deltatLabel = new JLabel("Delta t:");
         this.deltatField = new JTextField("" + this.deltaT);
-        
+
         this.settingsPanel.add(this.integratorLabel);
         this.settingsPanel.add(this.integratorBox);
         this.settingsPanel.add(this.deltatLabel);
         this.settingsPanel.add(this.deltatField);
         /*Settings*/
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 3;
+        c.weightx = 1.0;
+        c.weighty = 0.1;
+        c.anchor = GridBagConstraints.FIRST_LINE_START;
+        this.planetsPanel.add(this.planetsBox, c);
+        c.gridy = 1;
+        c.gridwidth = 1;
+        c.weighty = 0.0;
+        this.planetsPanel.add(this.vLabel, c);
+        c.gridx = 1;
+        this.planetsPanel.add(this.vxField, c);
+        c.gridx = 2;
+        this.planetsPanel.add(this.vyField, c);
+        c.gridy = 2;
+        c.gridx = 0;
+        this.planetsPanel.add(this.coordsLabel, c);
+        c.gridx = 1;
+        this.planetsPanel.add(this.xField, c);
+        c.gridx = 2;
+        this.planetsPanel.add(this.yField, c);
+        c.gridy = 3;
+        c.gridx = 0;
+        this.planetsPanel.add(this.massLabel, c);
+        c.gridx = 1;
+        this.planetsPanel.add(this.massField, c);
+        c.gridy = 4;
+        c.gridx = 0;
+        this.planetsPanel.add(this.radixLabel, c);
+        c.gridx = 1;
+        this.planetsPanel.add(this.radixField, c);
         
-        this.planetsPanel.add(this.planetsBox, FlowLayout.LEFT);
         this.currentDataPanel.add(this.planetsClonedBox);
 
         this.addListeners();
@@ -257,35 +351,6 @@ public class View implements Observer, Runnable {
         });
         fileMenu.add(openFile);
 
-        JMenuItem start = new JMenuItem("Start Simulation");
-        start.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                modul.setData(planets);
-                rechenThread = new Thread(modul);
-                rechenThread.setDaemon(true);
-                rechenThread.start();
-                isPaused = false;
-                canvas.requestFocus();
-            }
-        });
-        fileMenu.add(start);
-
-        JMenuItem reset = new JMenuItem("Reset Simulation");
-        reset.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (results != null) {
-                    planets = (ArrayList<Planet>) startPlanets.clone();
-                    isPaused = true;
-                    currentIndex = 0;
-                    slider.setValue(0);
-                }
-                canvas.requestFocus();
-            }
-        });
-        fileMenu.add(reset);
-
         JMenuItem pause = new JMenuItem("Pause");
         pause.addActionListener(new ActionListener() {
             @Override
@@ -306,9 +371,7 @@ public class View implements Observer, Runnable {
         saveDataToFile.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (results != null) {
-                    System.out.println("Saving...");
-                }
+                saveData();
                 canvas.requestFocus();
             }
         });
@@ -431,7 +494,6 @@ public class View implements Observer, Runnable {
                 rechenThread = new Thread(modul);
                 rechenThread.start();
                 isPaused = false;
-                canvas.requestFocus();
             }
         });
 
@@ -444,7 +506,6 @@ public class View implements Observer, Runnable {
                     currentIndex = 0;
                     slider.setValue(0);
                 }
-                canvas.requestFocus();
             }
         });
 
@@ -452,45 +513,93 @@ public class View implements Observer, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 shouldTakeScreenshot = true;
-                canvas.requestFocus();
             }
         });
-        
+
         this.saveProjectButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveProject();
-                canvas.requestFocus();
             }
         });
-        
+
         this.saveDataButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveData();
-                canvas.requestFocus();
+            }
+        });
+        
+        this.zoomInButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeZoomFactor(ChangeType.INCREASE, false);
+                shouldReInit = true;
+            }
+        });
+        
+        this.zoomOutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeZoomFactor(ChangeType.DECREASE, false);
+                shouldReInit = true;
             }
         });
 
+        this.planetsBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int index = ((JComboBox) e.getSource()).getSelectedIndex();
+                if(index > 0) {
+                    Planet temp = startPlanets.get(index - 1);
+                    vxField.setText("" + temp.getV().getX());
+                    vxField.setEnabled(true);
+                    vyField.setText("" + temp.getV().getY());
+                    vyField.setEnabled(true);
+                    xField.setText("" + temp.getCoords().getX());
+                    xField.setEnabled(true);
+                    yField.setText("" + temp.getCoords().getY());
+                    yField.setEnabled(true);
+                    massField.setText("" + temp.getMass());
+                    massField.setEnabled(true);
+                    radixField.setText("" + temp.getRadix());
+                    radixField.setEnabled(true);
+                } else {
+                    vxField.setText("");
+                    vxField.setEnabled(false);
+                    vyField.setText("");
+                    vyField.setEnabled(false);
+                    xField.setText("");
+                    xField.setEnabled(false);
+                    yField.setText("");
+                    yField.setEnabled(false);
+                    massField.setText("");
+                    massField.setEnabled(false);
+                    radixField.setText("");
+                    radixField.setEnabled(false);
+                }
+            }
+        });
+        
         this.integratorBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 modul.setIntegrator((Integratoren) ((JComboBox) e.getSource()).getSelectedItem());
             }
         });
-        
+
         this.deltatField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                String currentValue = ((JTextField)e.getSource()).getText();
-                if(currentValue.contains(",")) {
+                String currentValue = ((JTextField) e.getSource()).getText();
+                if (currentValue.contains(",")) {
                     currentValue = currentValue.replace(',', '.');
                 }
-                
+
                 try {
                     deltaT = Double.parseDouble(currentValue);
                     modul.setDeltaT(deltaT);
-                } catch(NumberFormatException ex) {
+                } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for deltaT is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
                     deltatField.setText("" + deltaT);
                 }
@@ -504,6 +613,7 @@ public class View implements Observer, Runnable {
     }
 
     public void init() {
+        this.modul.registerObserver("view", this);
         updateComboBoxes();
 
         try {
@@ -630,7 +740,7 @@ public class View implements Observer, Runnable {
 
         GL11.glLoadMatrix(this.buffer);
 
-        GL11.glOrtho(-Display.getWidth(), Display.getWidth(), -Display.getHeight(), Display.getHeight(), 1, -1);
+        GL11.glOrtho(-100, 100, -100, 100, 1, -1);
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
@@ -690,9 +800,9 @@ public class View implements Observer, Runnable {
 
     private void saveProject() {
         boolean wasSelfPaused = !this.isPaused;
-        
+
         this.isPaused = true;
-        
+
         JFileChooser fileChooser;
 
         if (this.lastOpenedFilePath.isEmpty()) {
@@ -702,29 +812,29 @@ public class View implements Observer, Runnable {
         }
 
         int state = fileChooser.showSaveDialog(this.frame);
-        
-        if(state == JFileChooser.APPROVE_OPTION) {
+
+        if (state == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             this.lastSavedFilePath = selectedFile.getAbsolutePath();
-            
+
             ProjectFileSaver saver = new ProjectFileSaver(this.lastSavedFilePath, this.startPlanets, this.modul.getIntegrator(), this.deltaT);
             saver.start();
         }
-        
-        if(wasSelfPaused) {
+
+        if (wasSelfPaused) {
             this.isPaused = false;
         }
     }
-    
+
     private void saveData() {
-        if(this.results == null) {
+        if (this.results == null) {
             return;
         }
-        
+
         boolean wasSelfPaused = !this.isPaused;
-        
+
         this.isPaused = true;
-        
+
         JFileChooser fileChooser;
 
         if (this.lastSavedDataFilePath.isEmpty()) {
@@ -734,20 +844,20 @@ public class View implements Observer, Runnable {
         }
 
         int state = fileChooser.showSaveDialog(this.frame);
-        
-        if(state == JFileChooser.APPROVE_OPTION) {
+
+        if (state == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             this.lastSavedDataFilePath = selectedFile.getAbsolutePath();
-            
+
             DataFileSaver saver = new DataFileSaver(this.lastSavedDataFilePath, this.deltaT, this.results);
             saver.start();
         }
-        
-        if(wasSelfPaused) {
+
+        if (wasSelfPaused) {
             this.isPaused = false;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private void openFile() {
         JFileChooser fileChooser;
@@ -769,7 +879,7 @@ public class View implements Observer, Runnable {
                 this.startPlanets = (ArrayList<Planet>) this.planets.clone();
                 this.deltaT = (double) dataFromDataFile.get("deltaT");
                 this.modul.setDeltaT(this.deltaT);
-                this.modul.setIntegrator((Integratoren)dataFromDataFile.get("Integrator"));
+                this.modul.setIntegrator((Integratoren) dataFromDataFile.get("Integrator"));
                 this.integratorBox.setSelectedItem(this.modul.getIntegrator());
                 this.speed = (long) (1 / this.deltaT);
                 updateComboBoxes();
@@ -790,13 +900,13 @@ public class View implements Observer, Runnable {
         this.planetsClonedBox.removeAllItems();
         this.planetsBox.addItem(this.standardBoxEntry);
         this.planetsClonedBox.addItem(this.standardBoxEntry);
-        
+
         for (int i = 0; i < size; i++) {
             temp = this.startPlanets.get(i).getLabel();
             this.planetsBox.addItem(temp);
             this.planetsClonedBox.addItem(temp);
         }
-        
+
         this.planetsBox.setSelectedIndex(0);
         this.planetsClonedBox.setSelectedIndex(0);
     }
@@ -844,9 +954,9 @@ public class View implements Observer, Runnable {
         int delta = Mouse.getDWheel();
 
         if (delta > 0) {
-            this.changeZoomFactor(ChangeType.INCREASE);
+            this.changeZoomFactor(ChangeType.INCREASE, true);
         } else if (delta < 0) {
-            this.changeZoomFactor(ChangeType.DECREASE);
+            this.changeZoomFactor(ChangeType.DECREASE, true);
         }
     }
 
@@ -883,7 +993,7 @@ public class View implements Observer, Runnable {
         this.initOpenGL();
     }
 
-    private void changeZoomFactor(ChangeType change) {
+    private void changeZoomFactor(ChangeType change, boolean shouldReInit) {
         switch (change) {
             case DECREASE:
                 if (this.zoomLevel != 1) {
@@ -910,8 +1020,9 @@ public class View implements Observer, Runnable {
             this.buffer.put(5, 1.0 / -this.zoomLevel);
             this.buffer.put(10, 1.0 / -this.zoomLevel);
         }
-
-        this.initOpenGL();
+        if(shouldReInit) {
+            this.initOpenGL();
+        }
     }
 
     private long getTime() {
