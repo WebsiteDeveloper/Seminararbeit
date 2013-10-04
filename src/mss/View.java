@@ -137,6 +137,7 @@ public class View implements Observer, Runnable {
     private final JComboBox<String> planetsBox;
     private final JComboBox<String> planetsClonedBox;
 
+    private final JLabel errorLabel;
     private final JLabel vLabel;
     private final JTextField vxField;
     private final JTextField vyField;
@@ -249,6 +250,7 @@ public class View implements Observer, Runnable {
         this.planetsClonedBox = new JComboBox<>();
         this.planetsClonedBox.addItem(this.standardBoxEntry);
 
+        this.errorLabel = new JLabel();
         this.vLabel = new JLabel("v in m/s");
         this.vLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.vLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -326,7 +328,8 @@ public class View implements Observer, Runnable {
         this.currentDataPanel.add(this.planetsClonedBox);
 
         this.addListeners();
-
+        this.addPlanetsUIListeners();
+            
         this.menuBar = new JMenuBar();
         this.menuBar.addFocusListener(new FocusAdapter() {
             @Override
@@ -490,10 +493,11 @@ public class View implements Observer, Runnable {
         this.startCalculationButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                canvas.requestFocus();
                 modul.setData(startPlanets);
                 rechenThread = new Thread(modul);
                 rechenThread.start();
-                isPaused = false;
+                isPaused = true;
             }
         });
 
@@ -607,6 +611,122 @@ public class View implements Observer, Runnable {
         });
     }
 
+    private void addPlanetsUIListeners() {
+        this.vxField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double vx = Double.parseDouble(currentValue);
+                    temp.setV(new Vektor2D(vx, temp.getV().getY()));
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + vx);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getV().getX());
+                }
+            }
+        });
+        
+        this.vyField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double vy = Double.parseDouble(currentValue);
+                    temp.setV(new Vektor2D(temp.getV().getX(), vy));
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + vy);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getV().getY());
+                }
+            }
+        });
+        
+        this.xField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double x = Double.parseDouble(currentValue);
+                    temp.setCoords(new Vektor2D(x, temp.getCoords().getY()));
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + x);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getCoords().getX());
+                }
+            }
+        });
+        
+        this.yField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double y = Double.parseDouble(currentValue);
+                    temp.setCoords(new Vektor2D(temp.getCoords().getX(), y));
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + y);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getCoords().getY());
+                }
+            }
+        });
+        
+        this.massField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double mass = Double.parseDouble(currentValue);
+                    temp.setMass(mass);
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + mass);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the mass is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getMass());
+                }
+            }
+        });
+        
+        this.radixField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                Planet temp = startPlanets.get(i - 1);
+                
+                try {
+                    double radix = Double.parseDouble(currentValue);
+                    temp.setRadix(radix);
+                    startPlanets.set(i - 1, temp);
+                    ((JTextField)(e.getSource())).setText("" + radix);
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the radix is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    ((JTextField)(e.getSource())).setText("" + temp.getRadix());
+                }
+            }
+        });
+    }
+    
     private void layout(int width, int height) {
         this.slider.setSize(width - 14, this.slider.getHeight());
         this.slider.setPreferredSize(this.slider.getSize());
@@ -941,6 +1061,7 @@ public class View implements Observer, Runnable {
     public void sendPlanets(Notifications type, ArrayList<ArrayList<Planet>> planets) {
         this.results = planets;
         this.initSlider();
+        this.isPaused = false;
     }
 
     private void initSlider() {
