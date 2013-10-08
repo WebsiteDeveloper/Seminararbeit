@@ -93,18 +93,19 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
         //Durchlaufe alle Planeten
         for (int i = 0; i < size; i++) {
-            Planet temp = planeten.get(i);
-            Vektor2D currentV = temp.getV(),
-                    deltaCoords;
+            Planet movingPlanet = planeten.get(i);
+            Vektor2D currentV = movingPlanet.getV(),
+                    deltaCoords,
+                    deltaV = new Vektor2D(0, 0);
 
             for (int j = 0; j < size; j++) {
                 if (i != j) {
-                    currentV = Vektor2D.add(currentV, this.getDeltaV(planeten.get(j), temp));
+                    deltaV = Vektor2D.add(deltaV, this.getDeltaV(planeten.get(j), movingPlanet));
                 }
             }
-
+            currentV = Vektor2D.add(currentV, deltaV);
             deltaCoords = this.getDeltaCoords(currentV);
-            ergs.add(new Planet(temp.getLabel(), Vektor2D.add(temp.getCoords(), deltaCoords), temp.getMass(), temp.getRadix(), (Vektor2D) currentV.clone(), temp.getColor()));
+            ergs.add(new Planet(movingPlanet.getLabel(), Vektor2D.add(movingPlanet.getCoords(), deltaCoords), movingPlanet.getMass(), movingPlanet.getRadix(), currentV, movingPlanet.getColor()));
         }
 
         return ergs;

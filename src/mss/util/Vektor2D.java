@@ -135,4 +135,9 @@ public class Vektor2D extends Vektor {
         
         return erg;
     }
+
+    @Override
+    public String toString() {
+        return "Vektor2D (" +  this.x + "|" + this.y + ") " + super.toString();
+    }
 }
