@@ -96,13 +96,21 @@ public class Planet {
         this.v = v;
     }
 
-    public void draw2D() {
+    public void draw2D(boolean debug) {
         GL11.glBegin(GL11.GL_POLYGON);
         GL11.glColor3f((float)(this.color.getRed()/255.0), (float)(this.color.getGreen()/255.0), (float)(this.color.getBlue()/255.0));
         for (double angle = 0; angle <= 360; angle += 1) {
             GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, this.coords.getY() + Math.cos(angle) * this.radix);
         }
         GL11.glEnd();
+        
+        if(debug) {
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glColor3f((float)((256 - this.color.getRed())/255.0), (float)((256 - this.color.getGreen())/255.0), (float)((256 - this.color.getBlue())/255.0));
+            GL11.glVertex2d(this.coords.getX(), this.coords.getY());
+            GL11.glVertex2d(this.coords.getX() + this.v.getX(), this.coords.getY() + this.v.getY());
+            GL11.glEnd();
+        }
     }
 
     public Color getColor() {
