@@ -91,7 +91,7 @@ public class Util {
                     } catch (IllegalArgumentException ex) {
                         erg.put("Error", erg.get("Error") + " Invalid Integrator setting on line " + (i+1) + "\n");
                     }
-                } else if(lines[i].matches("^(deltaT) [0-9]+[\\\\.]{0,1}[0-9]*$")) {
+                } else if(lines[i].startsWith("deltaT ")) {
                     String temp = lines[i].split(" ")[1];
                     erg.put("deltaT", Double.parseDouble(temp));
                 } else if (lines[i].startsWith("Body")) {
