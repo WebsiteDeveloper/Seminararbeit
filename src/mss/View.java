@@ -761,6 +761,20 @@ public class View implements Observer, Runnable {
             }
         });
         
+        this.removePlanet.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int index = planetsBox.getSelectedIndex() - 2;
+                
+                planetsBox.setSelectedIndex(0);
+                planetsClonedBox.setSelectedIndex(0);
+                
+                startPlanets.remove(index);
+                planets = (ArrayList<Planet>) startPlanets.clone();
+                updateComboBoxes();
+            }
+        });
+        
         this.removeAllPlanets.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
