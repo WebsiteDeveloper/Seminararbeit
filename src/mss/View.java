@@ -26,7 +26,6 @@ package mss;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -66,6 +65,8 @@ import javax.swing.SwingConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mss.integratoren.Integratoren;
@@ -84,6 +85,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.Color;
 
 /**
  *
@@ -139,6 +141,8 @@ public class View implements Observer, Runnable {
 
     private final JLabel errorLabel;
     private final JLabel vLabel;
+    private final JLabel textLabel;
+    private final JTextField labelField;
     private final JTextField vxField;
     private final JTextField vyField;
     private final JLabel coordsLabel;
@@ -151,6 +155,9 @@ public class View implements Observer, Runnable {
     private final JLabel colorPreviewLabel;
     private final JColorChooser colorChooser;
     private final JPanel colorChooserPreview;
+    private final JButton addPlanet;
+    private final JButton removePlanet;
+    private final JButton removeAllPlanets;
     
     private final JLabel integratorLabel;
     private final JComboBox<Integratoren> integratorBox;
@@ -163,11 +170,13 @@ public class View implements Observer, Runnable {
     private boolean wasInitialized = false;
     private boolean shouldReInit = false;
     private boolean shouldTakeScreenshot = false;
+    private boolean isAddingNewPlanet = false;
 
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
     private String lastSavedDataFilePath = "";
     private final String standardBoxEntry;
+    private final String newPlanetBoxEntry;
     private final JMenuBar menuBar;
 
     /**
@@ -176,7 +185,7 @@ public class View implements Observer, Runnable {
      */
     public View(String title) {
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
-        ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
+        ToolTipManager.sharedInstance().setLightWeightPopupEnabled(true);
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
@@ -222,7 +231,7 @@ public class View implements Observer, Runnable {
 
         this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         this.panel.setPreferredSize(new Dimension(800, 100));
-        this.panel.setBackground(Color.LIGHT_GRAY);
+        this.panel.setBackground(java.awt.Color.LIGHT_GRAY);
 
         this.panel.add(this.slider);
         this.panel.add(this.startCalculationButton);
@@ -236,7 +245,7 @@ public class View implements Observer, Runnable {
         this.panel.add(this.zoomOutButton);
 
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
-        this.tabbedPane.setPreferredSize(new Dimension(200, this.tabbedPane.getHeight()));
+        this.tabbedPane.setPreferredSize(new Dimension(300, this.tabbedPane.getHeight()));
         this.tabbedPane.addTab("Start Values", this.planetsPanel);
         this.tabbedPane.addTab("Current Values", this.currentDataPanel);
         this.tabbedPane.addTab("Settings", this.settingsPanel);
@@ -244,14 +253,20 @@ public class View implements Observer, Runnable {
         this.planetsPanel.setLayout(new GridBagLayout());
 
         this.standardBoxEntry = "Choose a Planet...";
-
+        this.newPlanetBoxEntry = "Add New Planet...";
+        
         this.planetsBox = new JComboBox<>();
         this.planetsBox.addItem(this.standardBoxEntry);
+        this.planetsBox.addItem(this.newPlanetBoxEntry);
         this.planetsClonedBox = new JComboBox<>();
         this.planetsClonedBox.addItem(this.standardBoxEntry);
 
         this.errorLabel = new JLabel();
-        this.vLabel = new JLabel("v in m/s");
+        this.textLabel = new JLabel("Label:");
+        this.textLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.textLabel.setVerticalAlignment(SwingConstants.CENTER);
+        this.labelField = new JTextField();
+        this.vLabel = new JLabel("v in m/s :");
         this.vLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.vLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.vxField = new JTextField();
@@ -272,6 +287,16 @@ public class View implements Observer, Runnable {
         this.colorPreviewLabel = new JLabel("Color: ");
         this.colorChooserPreview = new JPanel();
         this.colorChooser = new JColorChooser();
+        
+        this.addPlanet = new JButton("Add Planet");
+        this.addPlanet.setToolTipText("Add Planet");
+        this.addPlanet.setFocusable(false);
+        this.removePlanet = new JButton("Remove Planet");
+        this.removePlanet.setToolTipText("Remove Planet");
+        this.removePlanet.setFocusable(false);
+        this.removeAllPlanets = new JButton("Remove all Planets");
+        this.removeAllPlanets.setToolTipText("Remove all Planets");
+        this.removeAllPlanets.setFocusable(false);
         
         /*Settings*/
         this.integratorLabel = new JLabel("Numerical Method:");
@@ -302,28 +327,42 @@ public class View implements Observer, Runnable {
         c.gridy = 1;
         c.gridwidth = 1;
         c.weighty = 0.0;
+        this.planetsPanel.add(this.textLabel, c);
+        c.gridx = 1;
+        c.gridwidth = 2;
+        this.planetsPanel.add(this.labelField, c);
+        c.gridy = 2;
+        c.gridx = 0;
+        c.gridwidth = 1;
         this.planetsPanel.add(this.vLabel, c);
         c.gridx = 1;
         this.planetsPanel.add(this.vxField, c);
         c.gridx = 2;
         this.planetsPanel.add(this.vyField, c);
-        c.gridy = 2;
+        c.gridy = 3;
         c.gridx = 0;
         this.planetsPanel.add(this.coordsLabel, c);
         c.gridx = 1;
         this.planetsPanel.add(this.xField, c);
         c.gridx = 2;
         this.planetsPanel.add(this.yField, c);
-        c.gridy = 3;
+        c.gridy = 4;
         c.gridx = 0;
         this.planetsPanel.add(this.massLabel, c);
         c.gridx = 1;
         this.planetsPanel.add(this.massField, c);
-        c.gridy = 4;
+        c.gridy = 5;
         c.gridx = 0;
         this.planetsPanel.add(this.radixLabel, c);
         c.gridx = 1;
         this.planetsPanel.add(this.radixField, c);
+        c.gridy = 6;
+        c.gridx = 0;
+        this.planetsPanel.add(this.addPlanet, c);
+        c.gridx = 1;
+        this.planetsPanel.add(this.removePlanet, c);
+        c.gridx = 2;
+        this.planetsPanel.add(this.removeAllPlanets, c);
         
         this.currentDataPanel.add(this.planetsClonedBox);
 
@@ -479,6 +518,7 @@ public class View implements Observer, Runnable {
         this.playButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                canvas.requestFocusInWindow();
                 isPaused = false;
             }
         });
@@ -554,33 +594,63 @@ public class View implements Observer, Runnable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int index = ((JComboBox) e.getSource()).getSelectedIndex();
-                if(index > 0) {
-                    Planet temp = startPlanets.get(index - 1);
-                    vxField.setText("" + temp.getV().getX());
-                    vxField.setEnabled(true);
-                    vyField.setText("" + temp.getV().getY());
-                    vyField.setEnabled(true);
-                    xField.setText("" + temp.getCoords().getX());
-                    xField.setEnabled(true);
-                    yField.setText("" + temp.getCoords().getY());
-                    yField.setEnabled(true);
-                    massField.setText("" + temp.getMass());
-                    massField.setEnabled(true);
-                    radixField.setText("" + temp.getRadix());
-                    radixField.setEnabled(true);
-                } else {
-                    vxField.setText("");
-                    vxField.setEnabled(false);
-                    vyField.setText("");
-                    vyField.setEnabled(false);
-                    xField.setText("");
-                    xField.setEnabled(false);
-                    yField.setText("");
-                    yField.setEnabled(false);
-                    massField.setText("");
-                    massField.setEnabled(false);
-                    radixField.setText("");
-                    radixField.setEnabled(false);
+                try {
+                    isAddingNewPlanet = false;
+                    if(index > 1) {
+                        Planet temp = startPlanets.get(index - 2);
+                        labelField.setText(temp.getLabel());
+                        labelField.setEnabled(true);
+                        vxField.setText("" + temp.getV().getX());
+                        vxField.setEnabled(true);
+                        vyField.setText("" + temp.getV().getY());
+                        vyField.setEnabled(true);
+                        xField.setText("" + temp.getCoords().getX());
+                        xField.setEnabled(true);
+                        yField.setText("" + temp.getCoords().getY());
+                        yField.setEnabled(true);
+                        massField.setText("" + temp.getMass());
+                        massField.setEnabled(true);
+                        radixField.setText("" + temp.getRadix());
+                        radixField.setEnabled(true);
+                        addPlanet.setEnabled(false);
+                        removePlanet.setEnabled(true);
+                    } else if(index == 1) {
+                        isAddingNewPlanet = true;
+                        labelField.setEnabled(true);
+                        labelField.setText("");
+                        vxField.setEnabled(true);
+                        vxField.setText("");
+                        vyField.setEnabled(true);
+                        vyField.setText("");
+                        xField.setEnabled(true);
+                        xField.setText("");
+                        yField.setEnabled(true);
+                        yField.setText("");
+                        massField.setEnabled(true);
+                        massField.setText("");
+                        radixField.setEnabled(true);
+                        radixField.setText("");
+                        addPlanet.setEnabled(true);
+                        removePlanet.setEnabled(false);
+                    } else {
+                        labelField.setText("");
+                        labelField.setEnabled(false);
+                        vxField.setText("");
+                        vxField.setEnabled(false);
+                        vyField.setText("");
+                        vyField.setEnabled(false);
+                        xField.setText("");
+                        xField.setEnabled(false);
+                        yField.setText("");
+                        yField.setEnabled(false);
+                        massField.setText("");
+                        massField.setEnabled(false);
+                        radixField.setText("");
+                        radixField.setEnabled(false);
+                        addPlanet.setEnabled(false);
+                        removePlanet.setEnabled(false);
+                    }
+                } catch(java.lang.IllegalStateException ex) {
                 }
             }
         });
@@ -609,20 +679,133 @@ public class View implements Observer, Runnable {
                 }
             }
         });
+        
+        this.addPlanet.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String error = "",
+                       label,
+                       temp;
+                
+                Vektor2D coords = new Vektor2D(),
+                         v = new Vektor2D();
+                double mass = 0,
+                       radix = 0;
+                
+                label = labelField.getText().trim();
+                
+                temp = xField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        coords.setX(Double.parseDouble(temp));
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the x coordinate is not valid.\n";
+                    }
+                }
+                
+                temp = yField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        coords.setY(Double.parseDouble(temp));
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the y coordinate is not valid.\n";
+                    }
+                }
+                
+                temp = massField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        mass = Double.parseDouble(temp);
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the mass is not valid.\n";
+                    }
+                }
+                
+                temp = radixField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        radix = Double.parseDouble(temp);
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the radix is not valid.\n";
+                    }
+                }
+                
+                temp = vxField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        v.setX(Double.parseDouble(temp));
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the x component of v is not valid.\n";
+                    }
+                }
+                
+                temp = vyField.getText().trim();
+                if(!temp.isEmpty()) {
+                    try {
+                        v.setY(Double.parseDouble(temp));
+                    } catch(NumberFormatException ex) {
+                        error += "The value \"" + temp + " \" for the y component of v is not valid.\n";
+                    }
+                }
+                
+                if(error.isEmpty()) {
+                    Color c = new Color( (int)(Math.random() * 255), (int)(Math.random() * 255), (int)(Math.random() * 255));
+                    startPlanets.add(new Planet(label, coords, mass, radix, v, c));
+                    planets = (ArrayList<Planet>) startPlanets.clone();
+                    planetsBox.addItem(label);
+                    planetsClonedBox.addItem(label);
+                    planetsBox.setSelectedIndex(planetsBox.getItemCount() - 1);
+                } else {
+                    showInvalidFileDialog(error);//TODO: More general Error Dialog
+                }
+            }
+        });
+        
+        this.removeAllPlanets.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+            }
+        });
     }
 
     private void addPlanetsUIListeners() {
+        this.labelField.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
+                String currentValue = ((JTextField)(e.getSource())).getText();
+                int i = planetsBox.getSelectedIndex();
+                if(i < 2) {
+                    return;
+                }
+                Planet temp = startPlanets.get(i - 2);
+                
+                temp.setLabel(currentValue);
+                planetsBox.insertItemAt(currentValue, i);
+                planetsBox.removeItemAt(i + 1);
+                planetsBox.setSelectedIndex(i);
+                planetsBox.repaint();
+                startPlanets.set(i - 2, temp);
+            }
+        });
+        
         this.vxField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double vx = Double.parseDouble(currentValue);
                     temp.setV(new Vektor2D(vx, temp.getV().getY()));
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + vx);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -634,14 +817,17 @@ public class View implements Observer, Runnable {
         this.vyField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double vy = Double.parseDouble(currentValue);
                     temp.setV(new Vektor2D(temp.getV().getX(), vy));
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + vy);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -653,14 +839,17 @@ public class View implements Observer, Runnable {
         this.xField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double x = Double.parseDouble(currentValue);
                     temp.setCoords(new Vektor2D(x, temp.getCoords().getY()));
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + x);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -672,14 +861,17 @@ public class View implements Observer, Runnable {
         this.yField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double y = Double.parseDouble(currentValue);
                     temp.setCoords(new Vektor2D(temp.getCoords().getX(), y));
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + y);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -691,14 +883,17 @@ public class View implements Observer, Runnable {
         this.massField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double mass = Double.parseDouble(currentValue);
                     temp.setMass(mass);
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + mass);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the mass is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -710,14 +905,17 @@ public class View implements Observer, Runnable {
         this.radixField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                if(isAddingNewPlanet) {
+                    return;
+                }
                 String currentValue = ((JTextField)(e.getSource())).getText();
                 int i = planetsBox.getSelectedIndex();
-                Planet temp = startPlanets.get(i - 1);
+                Planet temp = startPlanets.get(i - 2);
                 
                 try {
                     double radix = Double.parseDouble(currentValue);
                     temp.setRadix(radix);
-                    startPlanets.set(i - 1, temp);
+                    startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + radix);
                 } catch(NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the radix is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
@@ -1019,6 +1217,7 @@ public class View implements Observer, Runnable {
         this.planetsBox.removeAllItems();
         this.planetsClonedBox.removeAllItems();
         this.planetsBox.addItem(this.standardBoxEntry);
+        this.planetsBox.addItem(this.newPlanetBoxEntry);
         this.planetsClonedBox.addItem(this.standardBoxEntry);
 
         for (int i = 0; i < size; i++) {
