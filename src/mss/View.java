@@ -190,7 +190,7 @@ public class View implements Observer, Runnable {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
         }
-
+        System.out.println((-0.1 + 3.775294016443222E-11));
         this.planets = new ArrayList<>();
         //this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
         //this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
@@ -536,6 +536,7 @@ public class View implements Observer, Runnable {
                 canvas.requestFocus();
                 modul.setData(startPlanets);
                 rechenThread = new Thread(modul);
+                rechenThread.setDaemon(true);
                 rechenThread.start();
                 isPaused = true;
             }
@@ -1221,6 +1222,7 @@ public class View implements Observer, Runnable {
                 this.startPlanets = (ArrayList<Planet>) this.planets.clone();
                 this.deltaT = (double) dataFromDataFile.get("deltaT");
                 this.modul.setDeltaT(this.deltaT);
+                this.deltatField.setText("" + this.deltaT);
                 this.modul.setIntegrator((Integratoren) dataFromDataFile.get("Integrator"));
                 this.integratorBox.setSelectedItem(this.modul.getIntegrator());
                 this.speed = (long) (1 / this.deltaT);

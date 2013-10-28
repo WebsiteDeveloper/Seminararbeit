@@ -65,6 +65,6 @@ public class DataFileSaver extends Thread {
             }
         } catch (IOException x) {
             System.err.format("IOException: %s%n", x);
-        }      
+        }
     }
 }

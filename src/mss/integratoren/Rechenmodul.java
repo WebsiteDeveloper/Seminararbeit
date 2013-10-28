@@ -103,7 +103,10 @@ public class Rechenmodul implements Observer, Observable, Runnable {
                     deltaV = Vektor2D.add(deltaV, this.getDeltaV(planeten.get(j), movingPlanet));
                 }
             }
-            currentV = Vektor2D.add(currentV, deltaV);
+            //System.out.println(deltaV.toString());
+            //System.out.println(currentV.getX() + deltaV.getX());
+            currentV = new Vektor2D(currentV.getX() + deltaV.getX(), currentV.getY() + deltaV.getY());
+            //System.out.println("Current: " + currentV.toString());
             deltaCoords = this.getDeltaCoords(currentV);
             ergs.add(new Planet(movingPlanet.getLabel(), Vektor2D.add(movingPlanet.getCoords(), deltaCoords), movingPlanet.getMass(), movingPlanet.getRadix(), currentV, movingPlanet.getColor()));
         }
