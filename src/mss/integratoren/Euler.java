@@ -32,7 +32,7 @@ import mss.util.Vektor2D;
  * @version 0.0.1
  */
 public class Euler implements Rechner {
-    
+
     /**
      *
      * @param v
@@ -40,12 +40,12 @@ public class Euler implements Rechner {
      * @return
      */
     @Override
-    public Vektor2D getNewX(Vektor2D v, double deltaT) {
+    public Vektor2D getDelta(Vektor2D v, double deltaT) {
         Vektor2D erg = new Vektor2D(v.getX() * deltaT, v.getY() * deltaT);
-        
+
         return erg;
     }
-    
+
     /**
      *
      * @param center
@@ -56,12 +56,12 @@ public class Euler implements Rechner {
      * @return
      */
     @Override
-    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, double masseCenter, double deltaT) {
+    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, Vektor2D vPlanet,  double masseCenter, double deltaT) {
         Vektor2D ortsVektor = new Vektor2D(center.getX() - planet.getX(), center.getY() - planet.getY());
-        
+
         Vektor2D a = Util.getA(masseCenter, ortsVektor);
         Vektor2D v = new Vektor2D(a.getX() * deltaT, a.getY() * deltaT);
-        
+
         return v;
     }
 }

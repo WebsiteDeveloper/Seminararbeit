@@ -36,14 +36,15 @@ public interface Rechner {
      * @param deltaT
      * @return
      */
-    public Vektor2D getNewX(Vektor2D v, double deltaT);
+    public Vektor2D getDelta(Vektor2D v, double deltaT);
     /**
      *
      * @param center
      * @param planet
+     * @param vPlanet
      * @param masseCenter
      * @param deltaT
      * @return
      */
-    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, double masseCenter, double deltaT);
+    public Vektor2D getDeltaV(Vektor2D center, Vektor2D planet, Vektor2D vPlanet,  double masseCenter, double deltaT);
 }

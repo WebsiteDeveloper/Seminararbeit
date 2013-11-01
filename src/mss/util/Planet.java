@@ -103,7 +103,7 @@ public class Planet {
             GL11.glVertex2d(this.coords.getX() + Math.sin(angle) * this.radix, this.coords.getY() + Math.cos(angle) * this.radix);
         }
         GL11.glEnd();
-        
+
         if(debug) {
             GL11.glBegin(GL11.GL_LINES);
             GL11.glColor3f((float)((256 - this.color.getRed())/255.0), (float)((256 - this.color.getGreen())/255.0), (float)((256 - this.color.getBlue())/255.0));
@@ -116,25 +116,25 @@ public class Planet {
     public Color getColor() {
         return this.color;
     }
-    
+
     @Override
     public String toString() {
         return "Planet " + this.label + " " + this.coords.getX() + " " + this.coords.getY() + " " + this.mass + " " + this.radix + " " + this.v.getX() + " " + this.v.getY() + " " + this.color.getRed() + " " + this.color.getGreen() + " " + this.color.getBlue() + "  -  " + super.toString();
     }
-    
+
     public String getDataString(String separator) {
-        return this.label + separator + this.coords.getX() + separator + this.coords.getY() + separator + this.mass + separator + this.radix + separator + this.v.getX() + separator + this.v.getY();
+        return String.format("%s", this.label) + separator + String.format("%f", this.coords.getX()) + separator + String.format("%f", this.coords.getY()) + separator + String.format("%f", this.mass) + separator + String.format("%f", this.radix) + separator + String.format("%f", this.v.getX()) + separator + String.format("%f", this.v.getY());
     }
-    
+
     public static boolean areColliding(Planet planet1, Planet planet2) {
         double x1 = planet1.getCoords().getX(),
                y1 = planet1.getCoords().getY(),
                x2 = planet2.getCoords().getX(),
                y2 = planet2.getCoords().getY();
-        
+
         double r1 = planet1.getRadix(),
                r2 = planet2.getRadix();
-        
+
         return (Math.pow((x2-x1), 2) + Math.pow((y1-y2), 2) <= Math.pow((r1+r2), 2));
     }
 }

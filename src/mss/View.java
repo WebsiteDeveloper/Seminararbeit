@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -161,6 +162,7 @@ public class View implements Observer, Runnable {
     private final JComboBox<Integratoren> integratorBox;
     private final JLabel deltatLabel;
     private final JTextField deltatField;
+    private final JCheckBox debugMode;
 
     private boolean isPaused = true;
     private int zoomLevel = 1;
@@ -169,6 +171,7 @@ public class View implements Observer, Runnable {
     private boolean shouldReInit = false;
     private boolean shouldTakeScreenshot = false;
     private boolean isAddingNewPlanet = false;
+    private boolean debug = false;
 
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
@@ -304,10 +307,13 @@ public class View implements Observer, Runnable {
         this.deltatLabel = new JLabel("Delta t:");
         this.deltatField = new JTextField("" + this.deltaT);
 
+        this.debugMode = new JCheckBox("Debug Mode: ", false);
+
         this.settingsPanel.add(this.integratorLabel);
         this.settingsPanel.add(this.integratorBox);
         this.settingsPanel.add(this.deltatLabel);
         this.settingsPanel.add(this.deltatField);
+        this.settingsPanel.add(this.debugMode);
         /*Settings*/
 
         GridBagConstraints c = new GridBagConstraints();
