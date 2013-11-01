@@ -123,7 +123,7 @@ public class Planet {
     }
 
     public String getDataString(String separator) {
-        return String.format("%s", this.label) + separator + String.format("%f", this.coords.getX()) + separator + String.format("%f", this.coords.getY()) + separator + String.format("%f", this.mass) + separator + String.format("%f", this.radix) + separator + String.format("%f", this.v.getX()) + separator + String.format("%f", this.v.getY());
+        return String.format("%-20s", this.label) + separator + String.format("%-10.5f", this.coords.getX()) + separator + String.format("%-10.5f", this.coords.getY()) + separator + String.format("%-20.2f", this.mass) + separator + String.format("%-10.2f", this.radix) + separator + String.format("%-10.5f", this.v.getX()) + separator + String.format("%-10.5f", this.v.getY());
     }
 
     public static boolean areColliding(Planet planet1, Planet planet2) {

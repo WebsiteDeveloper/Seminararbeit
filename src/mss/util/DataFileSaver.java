@@ -54,10 +54,10 @@ public class DataFileSaver extends Thread {
             int size = this.results.size();
             String temp;
             for(int i = 0; i < size; i++) {
-                temp = "" + this.deltaT * i;
+                temp = String.format("%-10.6f", this.deltaT * i);
                 for(int j = 0; j < this.results.get(i).size(); j++) {
                     Planet tmp = this.results.get(i).get(j);
-                    
+
                     temp += " " + tmp.getDataString(" ");
                 }
                 temp += "\n";

@@ -191,7 +191,7 @@ public class View implements Observer, Runnable {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
         }
-        System.out.println((-0.1 + 3.775294016443222E-11));
+
         this.planets = new ArrayList<>();
         //this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
         //this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
@@ -307,7 +307,7 @@ public class View implements Observer, Runnable {
         this.deltatLabel = new JLabel("Delta t:");
         this.deltatField = new JTextField("" + this.deltaT);
 
-        this.debugMode = new JCheckBox("Debug Mode: ", false);
+        this.debugMode = new JCheckBox("Debug Mode", false);
 
         this.settingsPanel.add(this.integratorLabel);
         this.settingsPanel.add(this.integratorBox);
@@ -681,6 +681,13 @@ public class View implements Observer, Runnable {
             }
         });
 
+        this.debugMode.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                debug = !debug;
+            }
+        });
+
         this.addPlanet.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -997,7 +1004,7 @@ public class View implements Observer, Runnable {
                 }
 
                 for (int i = 0; i < this.planets.size(); i++) {
-                    this.planets.get(i).draw2D(true);
+                    this.planets.get(i).draw2D(this.debug);
                 }
 
                 if (!this.isPaused && this.results != null && this.currentIndex < this.results.size() - 1 && this.getDelta() / this.deltaT >= this.speed) {
