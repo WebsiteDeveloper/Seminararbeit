@@ -532,6 +532,7 @@ public class View implements Observer, Runnable {
                 rechenThread.setDaemon(true);
                 rechenThread.start();
                 isPaused = true;
+                startCalculationButton.setEnabled(false);
             }
         });
 
@@ -1270,6 +1271,7 @@ public class View implements Observer, Runnable {
         this.results = planets;
         this.initSlider();
         this.isPaused = false;
+        this.startCalculationButton.setEnabled(true);
     }
 
     private void initSlider() {

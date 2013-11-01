@@ -42,7 +42,6 @@ public interface Rechner {
      * @param center
      * @param planet
      * @param masseCenter
-     * @param planetV
      * @param deltaT
      * @return
      */

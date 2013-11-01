@@ -66,7 +66,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     public void setData(ArrayList<Planet> startPlanets) {
         this.data = startPlanets;
     }
-    
+
     public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, ArrayList<Planet> startPlanets) {
         this.deltaT = deltaT;
 
