@@ -21,15 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package mss.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import mss.integratoren.Integratoren;
 
@@ -37,28 +31,14 @@ import mss.integratoren.Integratoren;
  *
  * @author Bernhard Sirlinger
  */
-public class ProjectFileSaver extends Thread {
+public class Project {
+    public final Integratoren integrator;
+    public final double deltaT;
+    public final ArrayList<Planet> planets;
 
-    private final Project project;
-    private final String filePath;
-
-    public ProjectFileSaver(String filePath, ArrayList<Planet> planets, Integratoren integrator, double deltaT) {
-        this.project = new Project(planets, integrator, deltaT);
-        this.filePath = filePath;
-    }
-
-    @Override
-    public void run() {
-        File file = new File(this.filePath); // The file to save to.
-
-        Charset charset = Charset.forName("UTF-8");
-        String s;
-        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            s = gson.toJson(project);
-            writer.write(s);
-        } catch (IOException x) {
-            System.err.format("IOException: %s%n", x);
-        }
+    public Project(ArrayList<Planet> planets, Integratoren integrator, double deltaT) {
+        this.planets = planets;
+        this.integrator = integrator;
+        this.deltaT = deltaT;
     }
 }
