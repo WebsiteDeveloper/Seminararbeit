@@ -25,10 +25,9 @@ package mss.integratoren;
 
 /**
  *
- * @author Admin
+ * @author Bernhard Sirlinger
  */
 public enum Integratoren {
     EULER,
-    LEAPFROG,
     RUNGE_KUTTA_KLASSISCH
 }

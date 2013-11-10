@@ -322,9 +322,8 @@ public class View implements Observer, Runnable {
         this.integratorLabel = new JLabel("Numerical Method:");
         this.integratorBox = new JComboBox<>();
         this.integratorBox.addItem(Integratoren.EULER);
-        this.integratorBox.addItem(Integratoren.LEAPFROG);
         this.integratorBox.addItem(Integratoren.RUNGE_KUTTA_KLASSISCH);
-        this.integratorBox.setSelectedIndex(2);
+        this.integratorBox.setSelectedIndex(1);
 
         this.deltatLabel = new JLabel("Delta t:");
         this.deltatField = new JTextField("" + this.deltaT);

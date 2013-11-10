@@ -59,7 +59,6 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     private void addIntegratoren() {
         this.integratoren.add(new Euler());
-        this.integratoren.add(new Leapfrog());
         this.integratoren.add(new RungeKuttaKlassisch());
     }
 
@@ -118,10 +117,6 @@ public class Rechenmodul implements Observer, Observable, Runnable {
                 Euler euler = (Euler) this.integratoren.get(Integratoren.EULER.ordinal());
                 Vektor2D coordsE = euler.getDelta(v, this.deltaT);
                 return coordsE;
-            case LEAPFROG:
-                Leapfrog leapfrog = (Leapfrog) this.integratoren.get(Integratoren.LEAPFROG.ordinal());
-                Vektor2D coordsL = leapfrog.getDelta(v, this.deltaT);
-                return coordsL;
             case RUNGE_KUTTA_KLASSISCH:
                 RungeKuttaKlassisch rungekutta = (RungeKuttaKlassisch) this.integratoren.get(Integratoren.RUNGE_KUTTA_KLASSISCH.ordinal());
                 Vektor2D coordsRKK = rungekutta.getDelta(v, this.deltaT);
@@ -137,10 +132,6 @@ public class Rechenmodul implements Observer, Observable, Runnable {
                 Euler euler = (Euler) this.integratoren.get(Integratoren.EULER.ordinal());
                 Vektor2D vE = euler.getDeltaV(center.getCoords(), moon.getCoords(), moon.getV(), center.getMass(), this.deltaT);
                 return vE;
-            case LEAPFROG:
-                Leapfrog leapfrog = (Leapfrog) this.integratoren.get(Integratoren.LEAPFROG.ordinal());
-                Vektor2D vL = leapfrog.getDeltaV(center.getCoords(), moon.getCoords(), moon.getV(), center.getMass(), this.deltaT);
-                return vL;
             case RUNGE_KUTTA_KLASSISCH:
                 RungeKuttaKlassisch rungekutta = (RungeKuttaKlassisch) this.integratoren.get(Integratoren.RUNGE_KUTTA_KLASSISCH.ordinal());
                 Vektor2D vRKK = rungekutta.getDeltaV(center.getCoords(), moon.getCoords(), moon.getV(), center.getMass(), this.deltaT);
