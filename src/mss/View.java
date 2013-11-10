@@ -37,7 +37,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -231,20 +230,40 @@ public class View implements Observer, Runnable {
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
 
-        //this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        this.panel.setLayout(new GridBagLayout());
         this.panel.setPreferredSize(new Dimension(800, 100));
         this.panel.setBackground(java.awt.Color.LIGHT_GRAY);
 
-        this.panel.add(this.slider);
-        this.panel.add(this.startCalculationButton);
-        this.panel.add(this.playButton);
-        this.panel.add(this.pauseButton);
-        this.panel.add(this.resetButton);
-        this.panel.add(this.takeScreenshotButton);
-        this.panel.add(this.saveProjectButton);
-        this.panel.add(this.saveDataButton);
-        this.panel.add(this.zoomInButton);
-        this.panel.add(this.zoomOutButton);
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 9;
+        c.ipadx = 0;
+        c.ipady = 0;
+        c.weightx = 1.0;
+        c.anchor = GridBagConstraints.FIRST_LINE_START;
+        this.panel.add(this.slider, c);
+        c.gridy = 1;
+        c.gridwidth = 1;
+        c.weighty = 1.0;
+        this.panel.add(this.startCalculationButton, c);
+        c.gridx = 1;
+        this.panel.add(this.playButton, c);
+        c.gridx = 2;
+        this.panel.add(this.pauseButton, c);
+        c.gridx = 3;
+        this.panel.add(this.resetButton, c);
+        c.gridx = 4;
+        this.panel.add(this.takeScreenshotButton, c);
+        c.gridx = 5;
+        this.panel.add(this.saveProjectButton, c);
+        c.gridx = 6;
+        this.panel.add(this.saveDataButton, c);
+        c.gridx = 7;
+        this.panel.add(this.zoomInButton, c);
+        c.gridx = 8;
+        this.panel.add(this.zoomOutButton, c);
 
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
         this.tabbedPane.setPreferredSize(new Dimension(300, this.tabbedPane.getHeight()));
@@ -319,7 +338,7 @@ public class View implements Observer, Runnable {
         this.settingsPanel.add(this.debugMode);
         /*Settings*/
 
-        GridBagConstraints c = new GridBagConstraints();
+        c = new GridBagConstraints();
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
         c.gridy = 0;
@@ -948,8 +967,8 @@ public class View implements Observer, Runnable {
     }
 
     private void layout(int width, int height) {
-        this.slider.setSize(width - 14, this.slider.getHeight());
-        this.slider.setPreferredSize(this.slider.getSize());
+        //this.slider.setSize(width - 14, this.slider.getHeight());
+        //this.slider.setPreferredSize(this.slider.getSize());
     }
 
     public void init() {
@@ -1094,31 +1113,7 @@ public class View implements Observer, Runnable {
         dialog.setLocation(this.frame.getX() + this.frame.getWidth() / 2 - 100, this.frame.getY() + this.frame.getHeight() / 2 - 100);
         dialog.setEnabled(true);
         dialog.setVisible(true);
-        dialog.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-            }
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-            }
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-            }
-
+        dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowDeactivated(WindowEvent e) {
                 isPaused = false;
