@@ -39,18 +39,18 @@ public class ScreenshotSaver extends Thread {
     private final String filepath;
     private final int width;
     private final int height;
-    
+
     public ScreenshotSaver(ByteBuffer buffer, String filepath, int width, int height) {
         this.buffer = buffer;
         this.filepath = filepath;
         this.width = width;
         this.height = height;
     }
-    
+
     @Override
     public void run() {
         ScreenshotSaver.count++;
-        File file = new File(this.filepath + "/" + "screenshot" + ScreenshotSaver.count + ".png"); // The file to save to.
+        File file = new File(this.filepath + File.separator + "screenshot" + ScreenshotSaver.count + ".png"); // The file to save to.
         String format = "PNG";
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 

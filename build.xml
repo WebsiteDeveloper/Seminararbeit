@@ -70,4 +70,44 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target name="-post-jar">
+        <copy file="resources/icon.png" flatten="true" todir="${dist.dir}"/>
+        <copy file="resources/jinput-dx8.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/jinput-dx8_64.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/jinput-raw.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/jinput-raw_64.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/libjinput-linux.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/libjinput-linux64.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/libjinput-osx.jnilib" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/liblwjgl.jnilib" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/liblwjgl.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/liblwjgl64.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/libopenal.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/libopenal64.so" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/lwjgl.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/lwjgl64.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/openal.dylib" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/OpenAL32.dll" flatten="true" todir="${dist.dir}/native"/>
+        <copy file="resources/OpenAL64.dll" flatten="true" todir="${dist.dir}/native"/>
+    </target>
+    <target name="-pre-compile">
+        <copy file="resources/icon.png" flatten="true" todir="${build.dir}"/>
+        <copy file="resources/jinput-dx8.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/jinput-dx8_64.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/jinput-raw.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/jinput-raw_64.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/libjinput-linux.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/libjinput-linux64.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/libjinput-osx.jnilib" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/liblwjgl.jnilib" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/liblwjgl.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/liblwjgl64.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/libopenal.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/libopenal64.so" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/lwjgl.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/lwjgl64.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/openal.dylib" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/OpenAL32.dll" flatten="true" todir="${build.dir}/native"/>
+        <copy file="resources/OpenAL64.dll" flatten="true" todir="${build.dir}/native"/>
+    </target>
 </project>

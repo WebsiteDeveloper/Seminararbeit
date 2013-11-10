@@ -27,7 +27,6 @@ import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -45,9 +44,9 @@ import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -152,12 +151,13 @@ public class View implements Observer, Runnable {
     private final JLabel radixLabel;
     private final JTextField radixField;
     private final JLabel colorPreviewLabel;
-    private final JColorChooser colorChooser;
-    private final JPanel colorChooserPreview;
+    private final JLabel colorLabel;
+    private final JTextField colorRed;
+    private final JTextField colorGreen;
+    private final JTextField colorBlue;
     private final JButton addPlanet;
     private final JButton removePlanet;
     private final JButton removeAllPlanets;
-
     private final JLabel integratorLabel;
     private final JComboBox<Integratoren> integratorBox;
     private final JLabel deltatLabel;
@@ -187,24 +187,25 @@ public class View implements Observer, Runnable {
     public View(String title) {
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(true);
+        final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        System.setProperty("org.lwjgl.librarypath",f.getParent() + File.separator + "native");
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
         }
 
         this.planets = new ArrayList<>();
-        //this.planets.add(new Planet("Sun", new Vektor2D(0, 3), 1e10, 1, new Vektor2D(0, 0), new org.lwjgl.util.Color(255, 255, 255)));
-        //this.planets.add(new Planet("Planet", new Vektor2D(0, 0), 100, 0.5, new Vektor2D(-0.05, 0.05), new org.lwjgl.util.Color(244, 233, 10)));
-        //this.planets.add(new Planet("Planet2", new Vektor2D(0, -3), 1e10, 1, new Vektor2D(), new org.lwjgl.util.Color(255, 255, 255)));
-        this.startPlanets = (ArrayList<Planet>) this.planets.clone();
+        this.startPlanets = new ArrayList<>();
 
         this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.01);
 
         this.buffer = BufferUtils.createDoubleBuffer(16);
         this.initBuffer();
 
+        ImageIcon img = new ImageIcon(f.getParent() + File.separator + "icon.png");
         this.title = title;
         this.frame = new JFrame(title);
+        this.frame.setIconImage(img.getImage());
 
         this.startCalculationButton = new JButton("Calculate");
         this.playButton = new JButton("Play");
@@ -230,7 +231,7 @@ public class View implements Observer, Runnable {
         this.slider.setEnabled(false);
         this.slider.setMinimumSize(new Dimension(800, this.slider.getHeight()));
 
-        this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        //this.panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         this.panel.setPreferredSize(new Dimension(800, 100));
         this.panel.setBackground(java.awt.Color.LIGHT_GRAY);
 
@@ -282,9 +283,11 @@ public class View implements Observer, Runnable {
         this.radixLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.radixLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.radixField = new JTextField();
-        this.colorPreviewLabel = new JLabel("Color: ");
-        this.colorChooserPreview = new JPanel();
-        this.colorChooser = new JColorChooser();
+        this.colorPreviewLabel = new JLabel();
+        this.colorLabel = new JLabel("Color: ");
+        this.colorRed = new JTextField();
+        this.colorGreen = new JTextField();
+        this.colorBlue = new JTextField();
 
         this.addPlanet = new JButton("Add Planet");
         this.addPlanet.setToolTipText("Add Planet");
@@ -369,13 +372,6 @@ public class View implements Observer, Runnable {
         this.addPlanetsUIListeners();
 
         this.menuBar = new JMenuBar();
-        this.menuBar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                System.out.println("Gained");
-                super.focusGained(e);
-            }
-        });
         this.frame.setJMenuBar(this.menuBar);
 
         JMenu fileMenu = new JMenu("File");
