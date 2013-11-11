@@ -75,6 +75,7 @@ import mss.integratoren.Rechenmodul;
 import mss.util.DataFileSaver;
 import mss.util.Notifications;
 import mss.util.Planet;
+import mss.util.Project;
 import mss.util.ProjectFileSaver;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
@@ -1216,16 +1217,21 @@ public class View implements Observer, Runnable {
             File selectedFile = fileChooser.getSelectedFile();
             this.lastOpenedFilePath = selectedFile.getAbsolutePath();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
-            if ("".equals((String) dataFromDataFile.get("Error")) && !((ArrayList<Planet>) dataFromDataFile.get("Planets")).isEmpty()) {
-                this.planets = (ArrayList<Planet>) dataFromDataFile.get("Planets");
-                this.startPlanets = (ArrayList<Planet>) this.planets.clone();
-                this.deltaT = (double) dataFromDataFile.get("deltaT");
-                this.modul.setDeltaT(this.deltaT);
-                this.deltatField.setText("" + this.deltaT);
-                this.modul.setIntegrator((Integratoren) dataFromDataFile.get("Integrator"));
-                this.integratorBox.setSelectedItem(this.modul.getIntegrator());
-                this.speed = (long) (1 / this.deltaT);
-                updateComboBoxes();
+            if ("".equals((String) dataFromDataFile.get("Error"))) {
+                Project project = (Project)dataFromDataFile.get("Project");
+                if(project.planets.isEmpty()) {
+                    this.showInvalidFileDialog("No Planets are defined in this File");
+                } else {
+                    this.planets = project.planets;
+                    this.startPlanets = (ArrayList<Planet>) this.planets.clone();
+                    this.deltaT = project.deltaT;
+                    this.modul.setDeltaT(this.deltaT);
+                    this.deltatField.setText("" + this.deltaT);
+                    this.modul.setIntegrator(project.integrator);
+                    this.integratorBox.setSelectedItem(project.integrator);
+                    this.speed = (long) (1 / this.deltaT);
+                    updateComboBoxes();
+                }
             } else {
                 this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
             }
