@@ -1,0 +1,35 @@
+{
+  "CALCULATE": "Calculate",
+  "PLAY": "Play",
+  "PAUSE": "Pause",
+  "RESET": "Reset",
+  "TAKE_SCREENSHOT": "Take Screenshot",
+  "SAVE_PROJECT": "Save Project",
+  "SAVE_COMPUTED_DATA": "Save Computed Data",
+  "+": "+",
+  "-": "-",
+  
+  "START_VALUES": "Start Values",
+  "SETTINGS": "Settings",
+  "CHOOSE_A_PLANET": "Choose a Planet...",
+  "ADD_NEW_PLANET": "Add new Planet...",
+  "LABEL": "Label:",
+  "V_IN_MS": "v in m/s :",
+  "COORDINATES": "Coordinates:",
+  "MASS": "Mass:",
+  "RADIX": "Radix:",
+  "COLOR": "Color:",
+  
+  "ADD_PLANET": "Add Planet",
+  "REMOVE_PLANET": "Remove Planet",
+  "REMOVE_ALL_PLANETS": "Remove all Planets",
+  "NUMERICAL_METHOD": "Numerical Method:",
+  "DELTA_T": "Delta t:",
+  "DEBUG_MODE": "Debug Mode",
+  
+  "FILE": "File",
+  "HELP": "Help",
+  "OPEN_PROJECT": "Open Project File",
+  "RESTART": "Restart",
+  "ABOUT": "About"
+}

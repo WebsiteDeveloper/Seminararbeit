@@ -1,0 +1,35 @@
+{
+  "CALCULATE": "Berechnung Starten",
+  "PLAY": "Start",
+  "PAUSE": "Pause",
+  "RESET": "Zurücksetzen",
+  "TAKE_SCREENSHOT": "Take Screenshot",
+  "SAVE_PROJECT": "Projekt speichern",
+  "SAVE_COMPUTED_DATA": "Daten speichern",
+  "+": "+",
+  "-": "-",
+  
+  "START_VALUES": "Startwerte",
+  "SETTINGS": "Einstellungen",
+  "CHOOSE_A_PLANET": "Wählen Sie einen Planeten...",
+  "ADD_NEW_PLANET": "Planet hinzufügen...",
+  "LABEL": "Name:",
+  "V_IN_MS": "v in m/s :",
+  "COORDINATES": "Koordinaten:",
+  "MASS": "Masse:",
+  "RADIX": "Radius:",
+  "COLOR": "Farbe:",
+  
+  "ADD_PLANET": "Planet hinzufügen",
+  "REMOVE_PLANET": "Planet löschen",
+  "REMOVE_ALL_PLANETS": "Alle Planeten löschen",
+  "NUMERICAL_METHOD": "Numerische Methode:",
+  "DELTA_T": "Delta t:",
+  "DEBUG_MODE": "Debug Modus",
+  
+  "FILE": "Datei",
+  "HELP": "Hilfe",
+  "OPEN_PROJECT": "Projektdatei öffnen",
+  "RESTART": "Fortfahren",
+  "ABOUT": "Über"
+}

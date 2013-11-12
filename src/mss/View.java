@@ -23,6 +23,7 @@
  */
 package mss;
 
+import com.google.gson.Gson;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -38,10 +39,12 @@ import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -175,6 +178,7 @@ public class View implements Observer, Runnable {
     private boolean isAddingNewPlanet = false;
     private boolean debug = false;
 
+    private String locale = "de";
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
     private String lastSavedDataFilePath = "";
@@ -182,10 +186,13 @@ public class View implements Observer, Runnable {
     private final String newPlanetBoxEntry;
     private final JMenuBar menuBar;
 
+    private HashMap<String, String> localeData;
+
     /**
      *
      * @param title
      */
+    @SuppressWarnings("unchecked")
     public View(String title) {
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(true);
@@ -193,13 +200,23 @@ public class View implements Observer, Runnable {
         try {
             path = URLDecoder.decode(path, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-
         }
+
         final File f = new File(path);
         System.setProperty("org.lwjgl.librarypath",f.getParent() + File.separator + "native");
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+        }
+
+        Gson gson = new Gson();
+        File file = new File(f.getParent() + File.separator + "nls" + File.separator + this.locale + File.separator + this.locale + ".json");
+        String data;
+        System.out.println(file.getPath());
+        try {
+            data = new String(Files.readAllBytes(file.toPath()));
+            this.localeData = (HashMap<String, String>)gson.fromJson(data, HashMap.class);
+        } catch (IOException ex) {
         }
 
         this.planets = new ArrayList<>();
@@ -215,15 +232,15 @@ public class View implements Observer, Runnable {
         this.frame = new JFrame(title);
         this.frame.setIconImage(img.getImage());
 
-        this.startCalculationButton = new JButton("Calculate");
-        this.playButton = new JButton("Play");
-        this.pauseButton = new JButton("Pause");
-        this.resetButton = new JButton("Reset");
-        this.takeScreenshotButton = new JButton("Take Screenshot");
-        this.saveProjectButton = new JButton("Save Project");
-        this.saveDataButton = new JButton("Save Computed Data");
-        this.zoomInButton = new JButton("+");
-        this.zoomOutButton = new JButton("-");
+        this.startCalculationButton = new JButton(this.localeData.get("CALCULATE"));
+        this.playButton = new JButton(this.localeData.get("PLAY"));
+        this.pauseButton = new JButton(this.localeData.get("PAUSE"));
+        this.resetButton = new JButton(this.localeData.get("RESET"));
+        this.takeScreenshotButton = new JButton(this.localeData.get("TAKE_SCREENSHOT"));
+        this.saveProjectButton = new JButton(this.localeData.get("SAVE_PROJECT"));
+        this.saveDataButton = new JButton(this.localeData.get("SAVE_COMPUTED_DATA"));
+        this.zoomInButton = new JButton(this.localeData.get("+"));
+        this.zoomOutButton = new JButton(this.localeData.get("-"));
 
         /* Prevent Focus jumping */
         this.startCalculationButton.setFocusable(false);
@@ -276,68 +293,68 @@ public class View implements Observer, Runnable {
 
         this.tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
         this.tabbedPane.setPreferredSize(new Dimension(300, this.tabbedPane.getHeight()));
-        this.tabbedPane.addTab("Start Values", this.planetsPanel);
-        this.tabbedPane.addTab("Settings", this.settingsPanel);
+        this.tabbedPane.addTab(this.localeData.get("START_VALUES"), this.planetsPanel);
+        this.tabbedPane.addTab(this.localeData.get("SETTINGS"), this.settingsPanel);
 
         this.planetsPanel.setLayout(new GridBagLayout());
 
-        this.standardBoxEntry = "Choose a Planet...";
-        this.newPlanetBoxEntry = "Add New Planet...";
+        this.standardBoxEntry = this.localeData.get("CHOOSE_A_PLANET");
+        this.newPlanetBoxEntry = this.localeData.get("ADD_NEW_PLANET");
 
         this.planetsBox = new JComboBox<>();
         this.planetsBox.addItem(this.standardBoxEntry);
         this.planetsBox.addItem(this.newPlanetBoxEntry);
 
         this.errorLabel = new JLabel();
-        this.textLabel = new JLabel("Label:");
+        this.textLabel = new JLabel(this.localeData.get("LABEL"));
         this.textLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.textLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.labelField = new JTextField();
-        this.vLabel = new JLabel("v in m/s :");
+        this.vLabel = new JLabel(this.localeData.get("V_IN_MS"));
         this.vLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.vLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.vxField = new JTextField();
         this.vyField = new JTextField();
-        this.coordsLabel = new JLabel("Coordinates: ");
+        this.coordsLabel = new JLabel(this.localeData.get("COORDINATES"));
         this.coordsLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.coordsLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.xField = new JTextField();
         this.yField = new JTextField();
-        this.massLabel = new JLabel("Mass: ");
+        this.massLabel = new JLabel(this.localeData.get("MASS"));
         this.massLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.massLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.massField = new JTextField();
-        this.radixLabel = new JLabel("Radix: ");
+        this.radixLabel = new JLabel(this.localeData.get("RADIX"));
         this.radixLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.radixLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.radixField = new JTextField();
         this.colorPreviewLabel = new JLabel();
-        this.colorLabel = new JLabel("Color: ");
+        this.colorLabel = new JLabel(this.localeData.get("COLOR"));
         this.colorRed = new JTextField();
         this.colorGreen = new JTextField();
         this.colorBlue = new JTextField();
 
-        this.addPlanet = new JButton("Add Planet");
-        this.addPlanet.setToolTipText("Add Planet");
+        this.addPlanet = new JButton(this.localeData.get("ADD_PLANET"));
+        this.addPlanet.setToolTipText(this.localeData.get("ADD_PLANET"));
         this.addPlanet.setFocusable(false);
-        this.removePlanet = new JButton("Remove Planet");
-        this.removePlanet.setToolTipText("Remove Planet");
+        this.removePlanet = new JButton(this.localeData.get("REMOVE_PLANET"));
+        this.removePlanet.setToolTipText(this.localeData.get("REMOVE_PLANET"));
         this.removePlanet.setFocusable(false);
-        this.removeAllPlanets = new JButton("Remove all Planets");
-        this.removeAllPlanets.setToolTipText("Remove all Planets");
+        this.removeAllPlanets = new JButton(this.localeData.get("REMOVE_ALL_PLANETS"));
+        this.removeAllPlanets.setToolTipText(this.localeData.get("REMOVE_ALL_PLANETS"));
         this.removeAllPlanets.setFocusable(false);
 
         /*Settings*/
-        this.integratorLabel = new JLabel("Numerical Method:");
+        this.integratorLabel = new JLabel(this.localeData.get("NUMERICAL_METHOD"));
         this.integratorBox = new JComboBox<>();
         this.integratorBox.addItem(Integratoren.EULER);
         this.integratorBox.addItem(Integratoren.RUNGE_KUTTA_KLASSISCH);
         this.integratorBox.setSelectedIndex(1);
 
-        this.deltatLabel = new JLabel("Delta t:");
+        this.deltatLabel = new JLabel(this.localeData.get("DELTA_T"));
         this.deltatField = new JTextField("" + this.deltaT);
 
-        this.debugMode = new JCheckBox("Debug Mode", false);
+        this.debugMode = new JCheckBox(this.localeData.get("DEBUG_MODE"), false);
 
         this.settingsPanel.add(this.integratorLabel);
         this.settingsPanel.add(this.integratorBox);
@@ -401,10 +418,10 @@ public class View implements Observer, Runnable {
         this.menuBar = new JMenuBar();
         this.frame.setJMenuBar(this.menuBar);
 
-        JMenu fileMenu = new JMenu("File");
-        JMenu helpMenu = new JMenu("Help");
+        JMenu fileMenu = new JMenu(this.localeData.get("FILE"));
+        JMenu helpMenu = new JMenu(this.localeData.get("HELP"));
 
-        JMenuItem openFile = new JMenuItem("Open File");
+        JMenuItem openFile = new JMenuItem(this.localeData.get("OPEN_PROJECT"));
         openFile.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -415,23 +432,23 @@ public class View implements Observer, Runnable {
         });
         fileMenu.add(openFile);
 
-        JMenuItem pause = new JMenuItem("Pause");
+        JMenuItem pause = new JMenuItem(this.localeData.get("PAUSE"));
         pause.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isPaused) {
                     isPaused = true;
-                    ((JMenuItem) e.getSource()).setText("Restart");
+                    ((JMenuItem) e.getSource()).setText(localeData.get("RESET"));
                 } else {
                     isPaused = false;
-                    ((JMenuItem) e.getSource()).setText("Pause");
+                    ((JMenuItem) e.getSource()).setText(localeData.get("PAUSE"));
                 }
                 canvas.requestFocus();
             }
         });
         fileMenu.add(pause);
 
-        JMenuItem saveDataToFile = new JMenuItem("Save Current Data to File");
+        JMenuItem saveDataToFile = new JMenuItem(this.localeData.get("SAVE_COMPUTED_DATA"));
         saveDataToFile.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -441,7 +458,7 @@ public class View implements Observer, Runnable {
         });
         fileMenu.add(saveDataToFile);
 
-        JMenuItem about = new JMenuItem("About");
+        JMenuItem about = new JMenuItem(this.localeData.get("ABOUT"));
         about.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -502,7 +519,6 @@ public class View implements Observer, Runnable {
         this.frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                layout(e.getComponent().getWidth(), e.getComponent().getHeight());
                 if (wasInitialized) {
                     shouldReInit = true;
                 }
@@ -972,11 +988,6 @@ public class View implements Observer, Runnable {
                 }
             }
         });
-    }
-
-    private void layout(int width, int height) {
-        //this.slider.setSize(width - 14, this.slider.getHeight());
-        //this.slider.setPreferredSize(this.slider.getSize());
     }
 
     public void init() {

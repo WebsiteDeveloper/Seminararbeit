@@ -89,6 +89,10 @@
         <copy file="resources/openal.dylib" flatten="true" todir="${dist.dir}/native"/>
         <copy file="resources/OpenAL32.dll" flatten="true" todir="${dist.dir}/native"/>
         <copy file="resources/OpenAL64.dll" flatten="true" todir="${dist.dir}/native"/>
+        
+        <copy flatten="false" todir="${dist.dir}/nls">
+            <fileset dir="resources/nls"/>
+        </copy>
     </target>
     <target name="-pre-compile">
         <copy file="resources/icon.png" flatten="true" todir="${build.dir}"/>
@@ -109,5 +113,9 @@
         <copy file="resources/openal.dylib" flatten="true" todir="${build.dir}/native"/>
         <copy file="resources/OpenAL32.dll" flatten="true" todir="${build.dir}/native"/>
         <copy file="resources/OpenAL64.dll" flatten="true" todir="${build.dir}/native"/>
+        
+        <copy flatten="false" todir="${build.dir}/nls">
+            <fileset dir="resources/nls"/>
+        </copy>
     </target>
 </project>
