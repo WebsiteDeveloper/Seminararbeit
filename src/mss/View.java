@@ -178,7 +178,7 @@ public class View implements Observer, Runnable {
     private boolean isAddingNewPlanet = false;
     private boolean debug = false;
 
-    private String locale = "de";
+    private String locale;
     private String lastOpenedFilePath = "";
     private String lastSavedFilePath = "";
     private String lastSavedDataFilePath = "";
@@ -208,6 +208,8 @@ public class View implements Observer, Runnable {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
         }
+
+        selectDefaultLanguage();
 
         Gson gson = new Gson();
         File file = new File(f.getParent() + File.separator + "nls" + File.separator + this.locale + File.separator + this.locale + ".json");
@@ -1393,5 +1395,17 @@ public class View implements Observer, Runnable {
         long delta = current_time - this.time;
 
         return delta;
+    }
+
+    private void selectDefaultLanguage() {
+        switch(System.getProperty("user.language")) {
+            case "de":
+                this.locale = "de";
+                break;
+
+            default:
+                this.locale = "en";
+                break;
+        }
     }
 }
