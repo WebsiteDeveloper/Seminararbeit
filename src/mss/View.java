@@ -214,7 +214,6 @@ public class View implements Observer, Runnable {
         Gson gson = new Gson();
         File file = new File(f.getParent() + File.separator + "nls" + File.separator + this.locale + File.separator + this.locale + ".json");
         String data;
-        System.out.println(file.getPath());
         try {
             data = new String(Files.readAllBytes(file.toPath()));
             this.localeData = (HashMap<String, String>)gson.fromJson(data, HashMap.class);
@@ -440,7 +439,7 @@ public class View implements Observer, Runnable {
             public void actionPerformed(ActionEvent e) {
                 if (!isPaused) {
                     isPaused = true;
-                    ((JMenuItem) e.getSource()).setText(localeData.get("RESET"));
+                    ((JMenuItem) e.getSource()).setText(localeData.get("RESTART"));
                 } else {
                     isPaused = false;
                     ((JMenuItem) e.getSource()).setText(localeData.get("PAUSE"));
