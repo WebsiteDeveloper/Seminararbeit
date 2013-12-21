@@ -721,7 +721,7 @@ public class View implements Observer, Runnable {
                     deltaT = Double.parseDouble(currentValue);
                     modul.setDeltaT(deltaT);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for deltaT is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for deltaT is not valid.");
                     deltatField.setText("" + deltaT);
                 }
             }
@@ -809,7 +809,7 @@ public class View implements Observer, Runnable {
                     planetsBox.addItem(label);
                     planetsBox.setSelectedIndex(planetsBox.getItemCount() - 1);
                 } else {
-                    showErrorDialog(error, "Invalid Component values");
+                    showErrorDialog("Invalid Component values", error);
                 }
             }
         });
