@@ -590,6 +590,7 @@ public class View implements Observer, Runnable {
 
         this.resetButton.addActionListener(new ActionListener() {
             @Override
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 if (results != null) {
                     planets = (ArrayList<Planet>) startPlanets.clone();
@@ -736,6 +737,7 @@ public class View implements Observer, Runnable {
 
         this.addPlanet.addActionListener(new ActionListener() {
             @Override
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 String error = "",
                        label,
@@ -816,6 +818,7 @@ public class View implements Observer, Runnable {
 
         this.removePlanet.addActionListener(new ActionListener() {
             @Override
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 int index = planetsBox.getSelectedIndex() - 2;
 
@@ -829,6 +832,7 @@ public class View implements Observer, Runnable {
 
         this.removeAllPlanets.addActionListener(new ActionListener() {
             @Override
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 startPlanets = new ArrayList<>();
                 planets = (ArrayList<Planet>) startPlanets.clone();
