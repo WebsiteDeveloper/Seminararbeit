@@ -31,5 +31,7 @@
   "HELP": "Hilfe",
   "OPEN_PROJECT": "Projektdatei öffnen",
   "RESTART": "Fortfahren",
-  "ABOUT": "Über"
+  "ABOUT": "Über",
+  
+  "ERROR_OPENING_PROJECT_FILE": "Fehler beim Öffnen der Projektdatei"
 }

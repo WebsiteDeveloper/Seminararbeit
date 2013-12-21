@@ -201,7 +201,13 @@ public class View implements Observer, Runnable {
             path = URLDecoder.decode(path, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
         }
-
+        /* DEBUG
+        Properties props = System.getProperties();
+        Set<String> spn = props.stringPropertyNames();
+        Object[] test = spn.toArray();
+        for (Object test1 : test) {
+            System.out.println(test1);
+        }*/
         final File f = new File(path);
         System.setProperty("org.lwjgl.librarypath",f.getParent() + File.separator + "native");
         try {
@@ -803,7 +809,7 @@ public class View implements Observer, Runnable {
                     planetsBox.addItem(label);
                     planetsBox.setSelectedIndex(planetsBox.getItemCount() - 1);
                 } else {
-                    showInvalidFileDialog(error);//TODO: More general Error Dialog
+                    showErrorDialog(error, "Invalid Component values");
                 }
             }
         });
@@ -842,7 +848,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = labelField.getText();
                 int i = planetsBox.getSelectedIndex();
                 if(i < 2) {
                     return;
@@ -864,7 +870,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = vxField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -872,10 +878,10 @@ public class View implements Observer, Runnable {
                     double vx = Double.parseDouble(currentValue);
                     temp.setV(new Vektor2D(vx, temp.getV().getY()));
                     startPlanets.set(i - 2, temp);
-                    ((JTextField)(e.getSource())).setText("" + vx);
+                    vxField.setText("" + vx);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getV().getX());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the x component of v is not valid.");
+                    vxField.setText("" + temp.getV().getX());
                 }
             }
         });
@@ -886,7 +892,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = vyField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -894,10 +900,10 @@ public class View implements Observer, Runnable {
                     double vy = Double.parseDouble(currentValue);
                     temp.setV(new Vektor2D(temp.getV().getX(), vy));
                     startPlanets.set(i - 2, temp);
-                    ((JTextField)(e.getSource())).setText("" + vy);
+                    vyField.setText("" + vy);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of v is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getV().getY());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the y component of v is not valid.");
+                    vyField.setText("" + temp.getV().getY());
                 }
             }
         });
@@ -908,7 +914,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = xField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -916,10 +922,10 @@ public class View implements Observer, Runnable {
                     double x = Double.parseDouble(currentValue);
                     temp.setCoords(new Vektor2D(x, temp.getCoords().getY()));
                     startPlanets.set(i - 2, temp);
-                    ((JTextField)(e.getSource())).setText("" + x);
+                    xField.setText("" + x);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the x component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getCoords().getX());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the x component of the coordinates is not valid.");
+                    xField.setText("" + temp.getCoords().getX());
                 }
             }
         });
@@ -930,7 +936,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = yField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -940,8 +946,8 @@ public class View implements Observer, Runnable {
                     startPlanets.set(i - 2, temp);
                     ((JTextField)(e.getSource())).setText("" + y);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the y component of the coordinates is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getCoords().getY());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the y component of the coordinates is not valid.");
+                    yField.setText("" + temp.getCoords().getY());
                 }
             }
         });
@@ -952,7 +958,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = massField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -960,10 +966,10 @@ public class View implements Observer, Runnable {
                     double mass = Double.parseDouble(currentValue);
                     temp.setMass(mass);
                     startPlanets.set(i - 2, temp);
-                    ((JTextField)(e.getSource())).setText("" + mass);
+                    massField.setText("" + mass);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the mass is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getMass());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the mass is not valid.");
+                    massField.setText("" + temp.getMass());
                 }
             }
         });
@@ -974,7 +980,7 @@ public class View implements Observer, Runnable {
                 if(isAddingNewPlanet) {
                     return;
                 }
-                String currentValue = ((JTextField)(e.getSource())).getText();
+                String currentValue = radixField.getText();
                 int i = planetsBox.getSelectedIndex();
                 Planet temp = startPlanets.get(i - 2);
 
@@ -982,10 +988,10 @@ public class View implements Observer, Runnable {
                     double radix = Double.parseDouble(currentValue);
                     temp.setRadix(radix);
                     startPlanets.set(i - 2, temp);
-                    ((JTextField)(e.getSource())).setText("" + radix);
+                    radixField.setText("" + radix);
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "The value \"" + currentValue + "\" for the radix is not valid.", "Invalid Value", JOptionPane.ERROR_MESSAGE);
-                    ((JTextField)(e.getSource())).setText("" + temp.getRadix());
+                    showErrorDialog("Invalid Value", "The value \"" + currentValue + "\" for the radix is not valid.");
+                    radixField.setText("" + temp.getRadix());
                 }
             }
         });
@@ -1218,8 +1224,7 @@ public class View implements Observer, Runnable {
         JFileChooser fileChooser;
 
         if (this.lastOpenedFilePath.isEmpty()) {
-            final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-            fileChooser = new JFileChooser(f.getParentFile());
+            fileChooser = new JFileChooser(System.getProperty("user.home"));
         } else {
             fileChooser = new JFileChooser(this.lastOpenedFilePath);
         }
@@ -1232,7 +1237,7 @@ public class View implements Observer, Runnable {
             if ("".equals((String) dataFromDataFile.get("Error"))) {
                 Project project = (Project)dataFromDataFile.get("Project");
                 if(project.planets.isEmpty()) {
-                    this.showInvalidFileDialog("No Planets are defined in this File");
+                    this.showErrorDialog(this.localeData.get("ERROR_OPENING_PROJECT_FILE"), "No Planets are defined in this File");
                 } else {
                     this.planets = project.planets;
                     this.startPlanets = (ArrayList<Planet>) this.planets.clone();
@@ -1245,7 +1250,7 @@ public class View implements Observer, Runnable {
                     updateComboBoxes();
                 }
             } else {
-                this.showInvalidFileDialog((String) dataFromDataFile.get("Error"));
+                this.showErrorDialog(this.localeData.get("ERROR_OPENING_PROJECT_FILE"), (String) dataFromDataFile.get("Error"));
             }
             this.isPaused = true;
         } else {
@@ -1269,8 +1274,8 @@ public class View implements Observer, Runnable {
         this.planetsBox.setSelectedIndex(0);
     }
 
-    private void showInvalidFileDialog(String errors) {
-        System.out.println(errors);
+    private void showErrorDialog(String title, String errors) {
+        JOptionPane.showMessageDialog(this.frame, errors, title, JOptionPane.ERROR_MESSAGE);
     }
 
     public String getTitle() {
