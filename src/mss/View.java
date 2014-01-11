@@ -83,6 +83,8 @@ import mss.util.ProjectFileSaver;
 import mss.util.ScreenshotSaver;
 import mss.util.Util;
 import mss.util.Vektor2D;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -98,6 +100,7 @@ import org.lwjgl.util.Color;
  */
 public class View implements Observer, Runnable {
 
+    private static Logger logger = LogManager.getLogger("View");
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
     private final Rechenmodul modul;
@@ -194,6 +197,9 @@ public class View implements Observer, Runnable {
      */
     @SuppressWarnings("unchecked")
     public View(String title) {
+        logger.entry("Constructor");
+        logger.info("Starting UI");
+        
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(true);
         String path = View.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -201,13 +207,7 @@ public class View implements Observer, Runnable {
             path = URLDecoder.decode(path, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
         }
-        /* DEBUG
-        Properties props = System.getProperties();
-        Set<String> spn = props.stringPropertyNames();
-        Object[] test = spn.toArray();
-        for (Object test1 : test) {
-            System.out.println(test1);
-        }*/
+        
         final File f = new File(path);
         System.setProperty("org.lwjgl.librarypath",f.getParent() + File.separator + "native");
         try {
@@ -224,6 +224,7 @@ public class View implements Observer, Runnable {
             data = new String(Files.readAllBytes(file.toPath()));
             this.localeData = (HashMap<String, String>)gson.fromJson(data, HashMap.class);
         } catch (IOException ex) {
+            logger.error("Could not read the locale file: {}", file.getAbsolutePath());
         }
 
         this.planets = new ArrayList<>();
@@ -482,6 +483,8 @@ public class View implements Observer, Runnable {
 
         this.menuBar.add(fileMenu);
         this.menuBar.add(helpMenu);
+        
+        logger.exit();
     }
 
     private void initBuffer() {
@@ -512,6 +515,7 @@ public class View implements Observer, Runnable {
                 planets = results.get(currentIndex);
                 if (slider.isFocusOwner()) {
                     isPaused = true;
+                    
                 }
             }
         });

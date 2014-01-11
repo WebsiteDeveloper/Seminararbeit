@@ -23,8 +23,6 @@
  */
 package mss;
 
-import java.util.HashMap;
-import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
 
 /**
@@ -32,28 +30,19 @@ import mss.integratoren.Rechenmodul;
  * @author Bernhard Sirlinger
  */
 public class Controller implements Runnable {
-    private final Rechenmodul modul;
     private final View frame;
-    private final HashMap<String, Thread> threads = new HashMap<>();
+    private final Thread thread;
     
     public Controller() {
-        this.modul = new Rechenmodul(Integratoren.RUNGE_KUTTA_KLASSISCH, 0.1);
         this.frame = new View("MSS");
         
-        this.modul.registerObserver("view", frame);
-        
-        Thread modulThread = new Thread(this.modul);
-        modulThread.setName("modul");
-        this.threads.put("modul", modulThread);
-        
         Thread frameThread = new Thread(this.frame);
-        frameThread.setName("frame");
-        this.threads.put("frame", frameThread);
+        frameThread.setName("MainFrame");
+        this.thread = frameThread;
     }
     
     public void start() {
-        //this.threads.get("modul").start();
-        this.threads.get("frame").start();
+        this.thread.start();
     }
     
     /**
