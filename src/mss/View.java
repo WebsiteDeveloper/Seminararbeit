@@ -1238,7 +1238,9 @@ public class View implements Observer, Runnable {
             File selectedFile = fileChooser.getSelectedFile();
             this.lastOpenedFilePath = selectedFile.getAbsolutePath();
             HashMap<String, Object> dataFromDataFile = Util.getDataFromDataFile(selectedFile);
-            if ("".equals((String) dataFromDataFile.get("Error"))) {
+            if (dataFromDataFile.get("Error") != null && !"".equals((String) dataFromDataFile.get("Error"))) {
+                this.showErrorDialog(this.localeData.get("ERROR_OPENING_PROJECT_FILE"), (String) dataFromDataFile.get("Error"));
+            } else {
                 Project project = (Project)dataFromDataFile.get("Project");
                 if(project.planets.isEmpty()) {
                     this.showErrorDialog(this.localeData.get("ERROR_OPENING_PROJECT_FILE"), "No Planets are defined in this File");
@@ -1253,8 +1255,6 @@ public class View implements Observer, Runnable {
                     this.speed = (long) (1 / this.deltaT);
                     updateComboBoxes();
                 }
-            } else {
-                this.showErrorDialog(this.localeData.get("ERROR_OPENING_PROJECT_FILE"), (String) dataFromDataFile.get("Error"));
             }
             this.isPaused = true;
         } else {
