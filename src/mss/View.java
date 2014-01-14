@@ -221,12 +221,12 @@ public class View implements Observer, Runnable {
         File file = new File(f.getParent() + File.separator + "nls" + File.separator + this.locale + File.separator + this.locale + ".json");
         String data;
         try {
-            data = new String(Files.readAllBytes(file.toPath()));
+            data = new String(Files.readAllBytes(file.toPath()), "UTF-8");
             this.localeData = (HashMap<String, String>)gson.fromJson(data, HashMap.class);
         } catch (IOException ex) {
             logger.error("Could not read the locale file: {}", file.getAbsolutePath());
         }
-
+        System.out.println(this.localeData.get("ABOUT"));
         this.planets = new ArrayList<>();
         this.startPlanets = new ArrayList<>();
 

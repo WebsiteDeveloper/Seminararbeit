@@ -71,7 +71,7 @@ public class Util {
 
         String data = null;
         try {
-            data = new String(Files.readAllBytes(file.toPath()));
+            data = new String(Files.readAllBytes(file.toPath()), "UTF-8");
 
             Project project = gson.fromJson(data, Project.class);
 

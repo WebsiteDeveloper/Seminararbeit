@@ -23,8 +23,6 @@
  */
 package mss;
 
-import mss.integratoren.Rechenmodul;
-
 /**
  *
  * @author Bernhard Sirlinger
