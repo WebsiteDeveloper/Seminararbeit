@@ -28,13 +28,5 @@ package mss.util;
  * @author Bernhard Sirlinger
  */
 public enum Notifications {
-    DISPLAY,
-    RESET,
-    START,
-    PAUSE,
-    RESUME,
-    UPDATE,
-    DELTA_CHANGE,
-    INTEGRATOR_CHANGE,
     RESULT
 }

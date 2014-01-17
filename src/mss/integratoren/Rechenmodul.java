@@ -23,6 +23,13 @@
  */
 package mss.integratoren;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,7 +73,7 @@ public class Rechenmodul implements Observer, Observable, Runnable {
         this.data = startPlanets;
     }
 
-    public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, ArrayList<Planet> startPlanets) {
+    public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, ArrayList<Planet> startPlanets, File tempFile) {
         this.deltaT = deltaT;
 
         ArrayList<ArrayList<Planet>> erg = new ArrayList<>(500);
@@ -170,17 +177,37 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
     @Override
     public void run() {
-        ArrayList<ArrayList<Planet>> computedValues = this.computeUntilT(this.deltaT, this.data);
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("MSS-", "-DATA");
+            tempFile.deleteOnExit();
+        } catch (IOException ex) {
+        }
+        
+        ArrayList<ArrayList<Planet>> computedValues = this.computeUntilT(this.deltaT, this.data, tempFile);
+        Gson gson = new Gson();
+        try {
+            OutputStream out = new FileOutputStream(tempFile);
+            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"))) {
+                writer.setIndent("  ");
+                writer.beginArray();
+                for (ArrayList<Planet> sub : computedValues) {
+                    writer.beginArray();
+                    for (Planet temp : sub) {
+                        gson.toJson(temp, Planet.class, writer);
+                    }
+                    writer.endArray();
+                }
+                writer.endArray();
+            }  
+        } catch (IOException ex) {
+            
+        }
         this.sendPlanetsToObservers(Notifications.RESULT, computedValues);
     }
 
     @Override
     public void notify(Notifications type, String data) {
-        switch (type) {
-            case DELTA_CHANGE:
-                this.setDeltaT(Double.parseDouble(data));
-                break;
-        }
     }
 
     @Override

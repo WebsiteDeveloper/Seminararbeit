@@ -226,7 +226,7 @@ public class View implements Observer, Runnable {
         } catch (IOException ex) {
             logger.error("Could not read the locale file: {}", file.getAbsolutePath());
         }
-        System.out.println(this.localeData.get("ABOUT"));
+        
         this.planets = new ArrayList<>();
         this.startPlanets = new ArrayList<>();
 
