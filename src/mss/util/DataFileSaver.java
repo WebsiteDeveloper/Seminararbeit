@@ -23,12 +23,20 @@
  */
 package mss.util;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
 
 /**
  *
@@ -36,35 +44,70 @@ import java.util.ArrayList;
  */
 public class DataFileSaver extends Thread {
     private final double deltaT;
-    private final ArrayList<ArrayList<Planet>> results;
+    private final File dataFile;
     private final String filePath;
 
-    public DataFileSaver(String filePath, double deltaT, ArrayList<ArrayList<Planet>> results) {
+    public DataFileSaver(String filePath, double deltaT, File dataFile) {
         this.deltaT = deltaT;
-        this.results = results;
+        this.dataFile = dataFile;
         this.filePath = filePath;
+    }
+    
+    private void write() {
+        InputStream in = null;
+        try {
+            File file = new File(this.filePath);
+            
+            in = new BufferedInputStream(new FileInputStream(this.dataFile));
+            JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+            
+            
+            
+            Charset charset = Charset.forName("UTF-8");
+            try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
+                int i = 0;
+                String temp;
+                Planet tmp;
+                Gson gson = new Gson();
+                
+                reader.setLenient(false);
+                reader.beginArray();
+                while (reader.hasNext()) {
+                    reader.beginArray();
+                    temp = String.format("%-10.6f", this.deltaT * i);
+                    while (reader.hasNext()) {
+                        try {
+                            tmp = gson.fromJson(reader, Planet.class);
+                            temp += " " + tmp.getDataString(" ");
+                        } catch (JsonSyntaxException ex) {
+                            System.err.println(ex.getMessage());
+                        }
+                    }
+                    temp += "\n";
+                    writer.write(temp);
+                    writer.flush();
+                    reader.endArray();
+                    i++;
+                }
+                reader.endArray();
+                reader.close();
+            } catch (IOException x) {
+                x.printStackTrace();
+                System.err.format("IOException: %s%n", x);//TODO: Look for Fix for EOFException on reader.hasNext()
+            }
+        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+        } finally {
+            try {
+                if(in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+            }
+        }
     }
 
     @Override
     public void run() {
-        File file = new File(this.filePath); // The file to save to.
-
-        Charset charset = Charset.forName("UTF-8");
-        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
-            int size = this.results.size();
-            String temp;
-            for(int i = 0; i < size; i++) {
-                temp = String.format("%-10.6f", this.deltaT * i);
-                for(int j = 0; j < this.results.get(i).size(); j++) {
-                    Planet tmp = this.results.get(i).get(j);
-
-                    temp += " " + tmp.getDataString(" ");
-                }
-                temp += "\n";
-                writer.write(temp);
-            }
-        } catch (IOException x) {
-            System.err.format("IOException: %s%n", x);
-        }
+        this.write();
     }
 }

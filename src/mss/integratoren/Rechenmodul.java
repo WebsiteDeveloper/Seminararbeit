@@ -24,6 +24,7 @@
 package mss.integratoren;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,7 +45,8 @@ import mss.util.Vektor2D;
  *
  * @author Bernhard Sirlinger
  */
-public class Rechenmodul implements Observer, Observable, Runnable {
+public class Rechenmodul implements Observable, Runnable {
+
     private final HashMap<String, Observer> observers = new HashMap<>();
 
     private final ArrayList<Rechner> integratoren = new ArrayList<>();
@@ -76,21 +78,70 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     public ArrayList<ArrayList<Planet>> computeUntilT(double deltaT, ArrayList<Planet> startPlanets, File tempFile) {
         this.deltaT = deltaT;
 
+        ArrayList<Planet> temp;
         ArrayList<ArrayList<Planet>> erg = new ArrayList<>(500);
-        erg.add(startPlanets);
-        erg.add(this.rechenschritt(startPlanets));
-        for (int i = 1;; i++) {
-            erg.add(this.rechenschritt(erg.get(i)));
 
-            String collisions = Util.findCollisions(erg.get(i + 1));
-            if (!collisions.isEmpty()) {
-                System.out.println(collisions);
-                return erg;
-            }
-            if(i > 1000/deltaT) {
-                return erg;
-            }
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonWriter writer = null;
+        try {
+            OutputStream out = new FileOutputStream(tempFile);
+            writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
+            writer.setIndent("  ");
+        } catch (IOException ex) {
         }
+        
+        if(writer != null) {
+            try {
+                writer.setLenient(false);
+                writer.beginArray();
+                    erg.add(startPlanets);
+                    temp = this.rechenschritt(startPlanets);
+                    writer.beginArray();
+                        for(Planet planet : startPlanets) {
+                            gson.toJson(planet, Planet.class, writer);
+                    }
+                    writer.endArray();
+                    writer.beginArray();
+                        for(Planet planet : temp) {
+                            gson.toJson(planet, Planet.class, writer);
+                        }
+                    writer.endArray();
+                    writer.flush();
+                    erg.add(temp);
+                    
+                    for (int i = 1;; i++) {
+                        temp = this.rechenschritt(temp);
+
+                        writer.beginArray();
+                        for(Planet planet : temp) {
+                            gson.toJson(planet, Planet.class, writer);
+                        }
+                        writer.endArray();
+                        writer.flush();
+                        if (i % 20 == 0) {
+                            erg.add(temp);
+                        }
+                        String collisions = Util.findCollisions(temp);
+                        if (!collisions.isEmpty()) {
+                            erg.add(temp);
+                            System.out.println(collisions);
+                            break;
+                        }
+                    
+                        if (i > 1000 / deltaT) {
+                            break;
+                        }
+                    }
+                writer.endArray();
+                writer.flush();
+                writer.close();
+            } catch (IOException ex) {
+            }
+        } else {
+            System.exit(-1);
+        }
+        
+        return erg;
     }
 
     public ArrayList<Planet> rechenschritt(ArrayList<Planet> planeten) {
@@ -134,6 +185,9 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     private Vektor2D getDeltaV(Planet center, Planet moon) {
+        if(this.integrator == null) {
+            this.integrator = Integratoren.RUNGE_KUTTA_KLASSISCH;//TODO: revert Workaround
+        }
         switch (this.integrator) {
             case EULER:
                 Euler euler = (Euler) this.integratoren.get(Integratoren.EULER.ordinal());
@@ -149,7 +203,11 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     public void setIntegrator(Integratoren integrator) {
-        this.integrator = integrator;
+        if(this.integrator != null) {
+            this.integrator = integrator;
+        } else {
+            System.out.println("No valid Integrator Provided");
+        }
     }
 
     public void setDeltaT(double deltaT) {
@@ -183,44 +241,19 @@ public class Rechenmodul implements Observer, Observable, Runnable {
             tempFile.deleteOnExit();
         } catch (IOException ex) {
         }
-        
+
         ArrayList<ArrayList<Planet>> computedValues = this.computeUntilT(this.deltaT, this.data, tempFile);
-        Gson gson = new Gson();
-        try {
-            OutputStream out = new FileOutputStream(tempFile);
-            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"))) {
-                writer.setIndent("  ");
-                writer.beginArray();
-                for (ArrayList<Planet> sub : computedValues) {
-                    writer.beginArray();
-                    for (Planet temp : sub) {
-                        gson.toJson(temp, Planet.class, writer);
-                    }
-                    writer.endArray();
-                }
-                writer.endArray();
-            }  
-        } catch (IOException ex) {
-            
-        }
-        this.sendPlanetsToObservers(Notifications.RESULT, computedValues);
+
+        this.sendDataToObservers(Notifications.RESULT, computedValues, tempFile);
     }
 
     @Override
-    public void notify(Notifications type, String data) {
-    }
-
-    @Override
-    public void sendPlanets(Notifications type, ArrayList<ArrayList<Planet>> planets) {
-    }
-
-    @Override
-    public void sendPlanetsToObservers(Notifications type, ArrayList<ArrayList<Planet>> results) {
+    public void sendDataToObservers(Notifications type, ArrayList<ArrayList<Planet>> results, File tempFile) {
         Collection<Observer> values = this.observers.values();
         Object[] toArray = values.toArray();
 
         for (Object temp : toArray) {
-            ((Observer) temp).sendPlanets(type, results);
+            ((Observer) temp).sendData(type, results, tempFile);
         }
     }
 

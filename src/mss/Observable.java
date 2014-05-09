@@ -23,6 +23,7 @@
  */
 package mss;
 
+import java.io.File;
 import java.util.ArrayList;
 import mss.util.Notifications;
 import mss.util.Planet;
@@ -35,5 +36,5 @@ public interface Observable {
     public void registerObserver(String key, Observer observer);
     public void removeObserver(String key);
     public void notifyObservers(Notifications type, String data);
-    public void sendPlanetsToObservers(Notifications type, ArrayList<ArrayList<Planet>> planets);
+    public void sendDataToObservers(Notifications type, ArrayList<ArrayList<Planet>> planets, File tempFile);
 }
