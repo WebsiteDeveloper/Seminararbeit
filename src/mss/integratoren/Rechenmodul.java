@@ -52,6 +52,10 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     public Rechenmodul(Integratoren integrator, double deltaT) {
+        if (integrator == null) {
+            integrator = Integratoren.RUNGE_KUTTA_KLASSISCH;
+        }
+        
         this.integrator = integrator;
         this.deltaT = deltaT;
         this.addIntegratoren();
@@ -77,7 +81,6 @@ public class Rechenmodul implements Observer, Observable, Runnable {
 
             String collisions = Util.findCollisions(erg.get(i + 1));
             if (!collisions.isEmpty()) {
-                System.out.println(collisions);
                 return erg;
             }
             if(i > 1000/deltaT) {
@@ -142,6 +145,10 @@ public class Rechenmodul implements Observer, Observable, Runnable {
     }
 
     public void setIntegrator(Integratoren integrator) {
+        if (integrator == null) {
+            integrator = Integratoren.RUNGE_KUTTA_KLASSISCH;
+        }
+        
         this.integrator = integrator;
     }
 
