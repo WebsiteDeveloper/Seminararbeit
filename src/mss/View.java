@@ -145,7 +145,6 @@ public class View implements Observer, Runnable {
 
     private final JComboBox<String> planetsBox;
 
-    private final JLabel errorLabel;
     private final JLabel vLabel;
     private final JLabel textLabel;
     private final JTextField labelField;
@@ -158,11 +157,6 @@ public class View implements Observer, Runnable {
     private final JTextField massField;
     private final JLabel radixLabel;
     private final JTextField radixField;
-    private final JLabel colorPreviewLabel;
-    private final JLabel colorLabel;
-    private final JTextField colorRed;
-    private final JTextField colorGreen;
-    private final JTextField colorBlue;
     private final JButton addPlanet;
     private final JButton removePlanet;
     private final JButton removeAllPlanets;
@@ -206,6 +200,7 @@ public class View implements Observer, Runnable {
         try {
             path = URLDecoder.decode(path, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
+            logger.error("Unsupported Encoding", ex.getLocalizedMessage());
         }
         
         final File f = new File(path);
@@ -313,7 +308,6 @@ public class View implements Observer, Runnable {
         this.planetsBox.addItem(this.standardBoxEntry);
         this.planetsBox.addItem(this.newPlanetBoxEntry);
 
-        this.errorLabel = new JLabel();
         this.textLabel = new JLabel(this.localeData.get("LABEL"));
         this.textLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.textLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -336,11 +330,6 @@ public class View implements Observer, Runnable {
         this.radixLabel.setHorizontalAlignment(SwingConstants.CENTER);
         this.radixLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.radixField = new JTextField();
-        this.colorPreviewLabel = new JLabel();
-        this.colorLabel = new JLabel(this.localeData.get("COLOR"));
-        this.colorRed = new JTextField();
-        this.colorGreen = new JTextField();
-        this.colorBlue = new JTextField();
 
         this.addPlanet = new JButton(this.localeData.get("ADD_PLANET"));
         this.addPlanet.setToolTipText(this.localeData.get("ADD_PLANET"));
