@@ -44,6 +44,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,12 +87,16 @@ import mss.util.Vektor2D;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
+import static org.lwjgl.glfw.Callbacks.*;
+import static org.lwjgl.glfw.GLFW.*;
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWKeyCallback;
+import org.lwjgl.glfw.GLFWvidmode;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.*;
+import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.Color;
 
 /**
@@ -100,7 +105,7 @@ import org.lwjgl.util.Color;
  */
 public class View implements Observer, Runnable {
 
-    private static Logger logger = LogManager.getLogger("View");
+    private static final Logger logger = LogManager.getLogger("View");
     private static boolean closeRequested = false;
     private final static AtomicReference<Dimension> newCanvasSize = new AtomicReference<>();
     private final Rechenmodul modul;
@@ -108,14 +113,13 @@ public class View implements Observer, Runnable {
     private long speed = 100;
     private int currentIndex = 0;
     private double deltaT = 0.01;
+    private org.lwjgl.glfw.GLFWScrollCallback scrollCallback;
 
     private enum ChangeType {
-
         INCREASE, DECREASE
     };
 
     private enum Directions {
-
         UP, DOWN, LEFT, RIGHT
     };
 
@@ -185,6 +189,9 @@ public class View implements Observer, Runnable {
 
     private HashMap<String, String> localeData;
 
+    private GLFWErrorCallback errorCallback;
+    private GLFWKeyCallback   keyCallback;
+    private long window;
     /**
      *
      * @param title
@@ -999,9 +1006,46 @@ public class View implements Observer, Runnable {
         updateComboBoxes();
 
         try {
-            Display.setParent(this.canvas);
-            Keyboard.enableRepeatEvents(true);
-            this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            initOpenGL();
+            windowLoop();
+            
+            glfwDestroyWindow(window);
+            keyCallback.release();
+        } finally {
+            glfwTerminate();
+            
+            if(this.errorCallback != null) {
+                errorCallback.release();
+            }
+            System.exit(0);
+        }
+    }
+    
+    private void windowLoop() {
+        GLContext.createFromCurrent();
+        
+        GL11.glMatrixMode(GL11.GL_PROJECTION);
+        glLoadMatrixd(this.buffer);
+        GL11.glOrtho(-100, 100, -100, 100, 1, -1);
+
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        
+        while ( glfwWindowShouldClose(window) == GL_FALSE ) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+ 
+            glfwSwapBuffers(window); // swap the color buffers
+ 
+            // Poll for window events. The key callback above will only be
+            // invoked during this call.
+            glfwPollEvents();
+        }
+        /*
+        this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             this.frame.setLayout(new BorderLayout());
             this.frame.add(this.tabbedPane, BorderLayout.LINE_START);
             this.frame.add(this.canvas, BorderLayout.CENTER);
@@ -1029,7 +1073,7 @@ public class View implements Observer, Runnable {
                 }
 
                 if (this.shouldTakeScreenshot) {
-                    this.saveScreenshot();
+                    saveScreenshot(this.window);
                     this.shouldTakeScreenshot = false;
                 }
 
@@ -1047,10 +1091,8 @@ public class View implements Observer, Runnable {
 
                 if (!this.isPaused && this.results != null && this.currentIndex < this.results.size() - 1 && this.getDelta() / this.deltaT >= this.speed) {
                     this.planets = this.results.get(this.currentIndex);
-                    int add = (int) (1 / deltaT);
-                    if (add == 0) {
-                        add = 1;
-                    }
+                    int add = Math.max((int) (1 / deltaT), 1);
+                    
                     this.time = this.getTime();
                     this.currentIndex += add;
                     this.slider.setValue(this.slider.getValue() + add);
@@ -1064,70 +1106,92 @@ public class View implements Observer, Runnable {
 
             Display.destroy();
             this.frame.dispose();
-        } catch (LWJGLException e) {
-            System.out.println(e.getMessage());
-            System.exit(-1);
-        }
+        */
     }
-
-    private void checkKeyInput() {
-        while (Keyboard.next()) {
-            if (!Keyboard.getEventKeyState()) {
-                switch (Keyboard.getEventKey()) {
-                    case Keyboard.KEY_F1:
-                        this.saveScreenshot();
-                        break;
-                    case Keyboard.KEY_SPACE:
-                        this.isPaused = !this.isPaused;
-                        break;
-                }
-            }
-
-            switch (Keyboard.getEventKey()) {
-                case Keyboard.KEY_UP:
-                    this.changeTranslationMatrix(Directions.UP);
-                    break;
-                case Keyboard.KEY_DOWN:
-                    this.changeTranslationMatrix(Directions.DOWN);
-                    break;
-                case Keyboard.KEY_LEFT:
-                    this.changeTranslationMatrix(Directions.LEFT);
-                    break;
-                case Keyboard.KEY_RIGHT:
-                    this.changeTranslationMatrix(Directions.RIGHT);
-                    break;
-                case Keyboard.KEY_0:
-                    Keyboard.poll();
-                    if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-                        this.resetScaleMatrix();
-                    }
-                    break;
-                case Keyboard.KEY_C:
-                    this.resetTranslationMatrix();
-                    break;
-                case Keyboard.KEY_ADD:
-                    if (this.speed >= 5 / this.deltaT) {
-                    this.speed -= 5 / this.deltaT;
-                }
-                    break;
-                case Keyboard.KEY_SUBTRACT:
-                    this.speed += 5 / this.deltaT;
-                    break;
-            }
-        }
-    }
-
+    
     private void initOpenGL() {
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-
-        GL11.glLoadMatrix(this.buffer);
-
-        GL11.glOrtho(-100, 100, -100, 100, 1, -1);
-
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        //glfwSetErrorCallback(errorCallback = errorCallbackPrint(System.err));
+        
+        if (glfwInit() != GL11.GL_TRUE)
+            throw new IllegalStateException("Unable to initialize GLFW");
+        
+        window = glfwCreateWindow(800, 800, "Hello World!", 0, 0);
+        if ( window == 0 ) {
+            throw new RuntimeException("Failed to create the GLFW window");
+        }
+        
+        // Configure our window
+        glfwDefaultWindowHints(); // optional, the current window hints are already the default
+        glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden after creation
+        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
+        
+        glfwSetKeyCallback(window, keyCallback = new GLFWKeyCallback() {
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                if (action == GLFW_RELEASE) {
+                    switch (key) {
+                        case GLFW_KEY_ESCAPE:
+                            glfwSetWindowShouldClose(window, GL_TRUE);
+                            break;
+                        case GLFW_KEY_F1:
+                            View.saveScreenshot(window);
+                            break;
+                        case GLFW_KEY_SPACE:
+                            //this.isPaused = !this.isPaused;
+                            break;
+                        case GLFW_KEY_UP:
+                            //this.changeTranslationMatrix(Directions.UP);
+                            break;
+                        case GLFW_KEY_DOWN:
+                            //this.changeTranslationMatrix(Directions.DOWN);
+                            break;
+                        case GLFW_KEY_LEFT:
+                            //this.changeTranslationMatrix(Directions.LEFT);
+                            break;
+                        case GLFW_KEY_RIGHT:
+                            //this.changeTranslationMatrix(Directions.RIGHT);
+                            break;
+                        case GLFW_KEY_0:
+                            //TODO: Add left shift
+                            //this.resetScaleMatrix();
+                            break;
+                        case GLFW_KEY_C:
+                            //this.resetTranslationMatrix();
+                            break;
+                        case GLFW_KEY_KP_ADD:
+                            //if (this.speed >= 5 / this.deltaT) {
+                            //    this.speed -= 5 / this.deltaT;
+                            //}
+                            break;
+                        case GLFW_KEY_KP_SUBTRACT:
+                            //this.speed += 5 / this.deltaT;
+                            break;
+                    }
+                }
+            }
+        });
+        
+        glfwSetScrollCallback(window, scrollCallback = GLFWScrollCallback((localwindow, xoffset, yoffset) -> {
+            if (yoffset > 0) {
+                this.changeZoomFactor(ChangeType.INCREASE, true);
+            } else if (yoffset < 0) {
+                this.changeZoomFactor(ChangeType.DECREASE, true);
+            }
+        }));
+        
+        // Get the resolution of the primary monitor
+        ByteBuffer vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        // Center our window
+        glfwSetWindowPos(
+            window,
+            (GLFWvidmode.width(vidmode) - 800) / 2,
+            (GLFWvidmode.height(vidmode) - 800) / 2
+        );
+ 
+        glfwMakeContextCurrent(window);
+        // Enable v-sync
+        glfwSwapInterval(0);
+        glfwShowWindow(window);
     }
 
     private void showAboutDialog() {
@@ -1145,11 +1209,15 @@ public class View implements Observer, Runnable {
         });
     }
 
-    private void saveScreenshot() {
+    private static void saveScreenshot(long window) {
+        IntBuffer w = BufferUtils.createIntBuffer(1);
+        IntBuffer h = BufferUtils.createIntBuffer(1);
+        glfwGetWindowSize(window, w, h);
+        
         final File f = new File(View.class.getProtectionDomain().getCodeSource().getLocation().getPath());
         GL11.glReadBuffer(GL11.GL_FRONT);
-        int width = Display.getWidth();
-        int height = Display.getHeight();
+        int width = w.get(); 
+        int height = h.get();
         ByteBuffer byteBuffer = BufferUtils.createByteBuffer(width * height * 4);
         GL11.glReadPixels(0, 0, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, byteBuffer);
         ScreenshotSaver saver = new ScreenshotSaver(byteBuffer, f.getParent(), width, height);
@@ -1281,7 +1349,7 @@ public class View implements Observer, Runnable {
 
     public void setTitle(String title) {
         this.title = title;
-        Display.setTitle(this.title);
+        glfwSetWindowTitle(this.window, this.title);
     }
 
     public void setPlanets(ArrayList<Planet> planets) {
@@ -1310,16 +1378,6 @@ public class View implements Observer, Runnable {
         this.slider.setMinorTickSpacing(1);
         this.slider.setValue(0);
         this.slider.setEnabled(true);
-    }
-
-    private void checkMouseInput() {
-        int delta = Mouse.getDWheel();
-
-        if (delta > 0) {
-            this.changeZoomFactor(ChangeType.INCREASE, true);
-        } else if (delta < 0) {
-            this.changeZoomFactor(ChangeType.DECREASE, true);
-        }
     }
 
     private void resetScaleMatrix() {
@@ -1388,7 +1446,7 @@ public class View implements Observer, Runnable {
     }
 
     private long getTime() {
-        return (Sys.getTime() * 1000 / Sys.getTimerResolution());
+        return (System.nanoTime() * 1000);
     }
 
     private long getDelta() {
