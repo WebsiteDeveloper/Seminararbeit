@@ -426,54 +426,42 @@ public class View implements Observer, Runnable {
         JMenu helpMenu = new JMenu(this.localeData.get("HELP"));
 
         JMenuItem openFile = new JMenuItem(this.localeData.get("OPEN_PROJECT"));
-        openFile.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                isPaused = true;
-                openFile();
-                canvas.requestFocus();
-            }
+        openFile.addActionListener((ActionEvent e) -> {
+            isPaused = true;
+            openFile();
+            canvas.requestFocus();
         });
         fileMenu.add(openFile);
 
         JMenuItem pause = new JMenuItem(this.localeData.get("PAUSE"));
-        pause.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!isPaused) {
-                    isPaused = true;
-                    ((JMenuItem) e.getSource()).setText(localeData.get("RESTART"));
-                } else {
-                    isPaused = false;
-                    ((JMenuItem) e.getSource()).setText(localeData.get("PAUSE"));
-                }
-                canvas.requestFocus();
+        pause.addActionListener((ActionEvent e) -> {
+            if (!isPaused) {
+                isPaused = true;
+                ((JMenuItem) e.getSource()).setText(localeData.get("RESTART"));
+            } else {
+                isPaused = false;
+                ((JMenuItem) e.getSource()).setText(localeData.get("PAUSE"));
             }
+            canvas.requestFocus();
         });
         fileMenu.add(pause);
 
         JMenuItem saveDataToFile = new JMenuItem(this.localeData.get("SAVE_COMPUTED_DATA"));
-        saveDataToFile.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveData();
-                canvas.requestFocus();
-            }
+        saveDataToFile.addActionListener((ActionEvent e) -> {
+            saveData();
+            canvas.requestFocus();
         });
         fileMenu.add(saveDataToFile);
 
         JMenuItem about = new JMenuItem(this.localeData.get("ABOUT"));
-        about.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ((JMenuItem) e.getSource()).setName("");
-                if (!isPaused) {
-                    isPaused = true;
-                    ((JMenuItem) e.getSource()).setName("selfPaused");
-                }
-                showAboutDialog();
-                canvas.requestFocus();
+        about.addActionListener((ActionEvent e) -> {
+            ((JMenuItem) e.getSource()).setName("");
+            if (!isPaused) {
+                isPaused = true;
+                ((JMenuItem) e.getSource()).setName("selfPaused");
             }
+            showAboutDialog();
+            canvas.requestFocus();
         });
         helpMenu.add(about);
 
@@ -503,16 +491,12 @@ public class View implements Observer, Runnable {
     }
 
     private void addListeners() {
-        this.slider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                JSlider slider = (JSlider) e.getSource();
-                currentIndex = slider.getValue();
-                planets = results.get(currentIndex);
-                if (slider.isFocusOwner()) {
-                    isPaused = true;
-                    
-                }
+        this.slider.addChangeListener((ChangeEvent e) -> {
+            JSlider slider1 = (JSlider) e.getSource();
+            currentIndex = slider1.getValue();
+            planets = results.get(currentIndex);
+            if (slider1.isFocusOwner()) {
+                isPaused = true;
             }
         });
 
@@ -560,154 +544,120 @@ public class View implements Observer, Runnable {
             }
         });
 
-        this.playButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                canvas.requestFocusInWindow();
-                isPaused = false;
-            }
+        this.playButton.addActionListener((ActionEvent e) -> {
+            canvas.requestFocusInWindow();
+            isPaused = false;
         });
 
-        this.pauseButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        this.pauseButton.addActionListener((ActionEvent e) -> {
+            isPaused = true;
+        });
+
+        this.startCalculationButton.addActionListener((ActionEvent e) -> {
+            canvas.requestFocus();
+            modul.setData(startPlanets);
+            rechenThread = new Thread(modul);
+            rechenThread.setDaemon(true);
+            rechenThread.start();
+            isPaused = true;
+            startCalculationButton.setEnabled(false);
+        });
+
+        this.resetButton.addActionListener((ActionEvent e) -> {
+            if (results != null) {
+                planets = (ArrayList<Planet>) startPlanets.clone();
                 isPaused = true;
+                currentIndex = 0;
+                slider.setValue(0);
             }
         });
 
-        this.startCalculationButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                canvas.requestFocus();
-                modul.setData(startPlanets);
-                rechenThread = new Thread(modul);
-                rechenThread.setDaemon(true);
-                rechenThread.start();
-                isPaused = true;
-                startCalculationButton.setEnabled(false);
-            }
+        this.takeScreenshotButton.addActionListener((ActionEvent e) -> {
+            shouldTakeScreenshot = true;
         });
 
-        this.resetButton.addActionListener(new ActionListener() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                if (results != null) {
-                    planets = (ArrayList<Planet>) startPlanets.clone();
-                    isPaused = true;
-                    currentIndex = 0;
-                    slider.setValue(0);
+        this.saveProjectButton.addActionListener((ActionEvent e) -> {
+            saveProject();
+        });
+
+        this.saveDataButton.addActionListener((ActionEvent e) -> {
+            saveData();
+        });
+
+        this.zoomInButton.addActionListener((ActionEvent e) -> {
+            changeZoomFactor(ChangeType.INCREASE, false);
+            shouldReInit = true;
+        });
+
+        this.zoomOutButton.addActionListener((ActionEvent e) -> {
+            changeZoomFactor(ChangeType.DECREASE, false);
+            shouldReInit = true;
+        });
+
+        this.planetsBox.addActionListener((ActionEvent e) -> {
+            int index = ((JComboBox) e.getSource()).getSelectedIndex();
+            try {
+                isAddingNewPlanet = false;
+                if(index > 1) {
+                    Planet temp = startPlanets.get(index - 2);
+                    labelField.setText(temp.getLabel());
+                    labelField.setEnabled(true);
+                    vxField.setText("" + temp.getV().getX());
+                    vxField.setEnabled(true);
+                    vyField.setText("" + temp.getV().getY());
+                    vyField.setEnabled(true);
+                    xField.setText("" + temp.getCoords().getX());
+                    xField.setEnabled(true);
+                    yField.setText("" + temp.getCoords().getY());
+                    yField.setEnabled(true);
+                    massField.setText("" + temp.getMass());
+                    massField.setEnabled(true);
+                    radixField.setText("" + temp.getRadix());
+                    radixField.setEnabled(true);
+                    addPlanet.setEnabled(false);
+                    removePlanet.setEnabled(true);
+                } else if(index == 1) {
+                    isAddingNewPlanet = true;
+                    labelField.setEnabled(true);
+                    labelField.setText("");
+                    vxField.setEnabled(true);
+                    vxField.setText("");
+                    vyField.setEnabled(true);
+                    vyField.setText("");
+                    xField.setEnabled(true);
+                    xField.setText("");
+                    yField.setEnabled(true);
+                    yField.setText("");
+                    massField.setEnabled(true);
+                    massField.setText("");
+                    radixField.setEnabled(true);
+                    radixField.setText("");
+                    addPlanet.setEnabled(true);
+                    removePlanet.setEnabled(false);
+                } else {
+                    labelField.setText("");
+                    labelField.setEnabled(false);
+                    vxField.setText("");
+                    vxField.setEnabled(false);
+                    vyField.setText("");
+                    vyField.setEnabled(false);
+                    xField.setText("");
+                    xField.setEnabled(false);
+                    yField.setText("");
+                    yField.setEnabled(false);
+                    massField.setText("");
+                    massField.setEnabled(false);
+                    radixField.setText("");
+                    radixField.setEnabled(false);
+                    addPlanet.setEnabled(false);
+                    removePlanet.setEnabled(false);
                 }
+            } catch(java.lang.IllegalStateException ex) {
             }
         });
 
-        this.takeScreenshotButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shouldTakeScreenshot = true;
-            }
-        });
-
-        this.saveProjectButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveProject();
-            }
-        });
-
-        this.saveDataButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveData();
-            }
-        });
-
-        this.zoomInButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeZoomFactor(ChangeType.INCREASE, false);
-                shouldReInit = true;
-            }
-        });
-
-        this.zoomOutButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeZoomFactor(ChangeType.DECREASE, false);
-                shouldReInit = true;
-            }
-        });
-
-        this.planetsBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int index = ((JComboBox) e.getSource()).getSelectedIndex();
-                try {
-                    isAddingNewPlanet = false;
-                    if(index > 1) {
-                        Planet temp = startPlanets.get(index - 2);
-                        labelField.setText(temp.getLabel());
-                        labelField.setEnabled(true);
-                        vxField.setText("" + temp.getV().getX());
-                        vxField.setEnabled(true);
-                        vyField.setText("" + temp.getV().getY());
-                        vyField.setEnabled(true);
-                        xField.setText("" + temp.getCoords().getX());
-                        xField.setEnabled(true);
-                        yField.setText("" + temp.getCoords().getY());
-                        yField.setEnabled(true);
-                        massField.setText("" + temp.getMass());
-                        massField.setEnabled(true);
-                        radixField.setText("" + temp.getRadix());
-                        radixField.setEnabled(true);
-                        addPlanet.setEnabled(false);
-                        removePlanet.setEnabled(true);
-                    } else if(index == 1) {
-                        isAddingNewPlanet = true;
-                        labelField.setEnabled(true);
-                        labelField.setText("");
-                        vxField.setEnabled(true);
-                        vxField.setText("");
-                        vyField.setEnabled(true);
-                        vyField.setText("");
-                        xField.setEnabled(true);
-                        xField.setText("");
-                        yField.setEnabled(true);
-                        yField.setText("");
-                        massField.setEnabled(true);
-                        massField.setText("");
-                        radixField.setEnabled(true);
-                        radixField.setText("");
-                        addPlanet.setEnabled(true);
-                        removePlanet.setEnabled(false);
-                    } else {
-                        labelField.setText("");
-                        labelField.setEnabled(false);
-                        vxField.setText("");
-                        vxField.setEnabled(false);
-                        vyField.setText("");
-                        vyField.setEnabled(false);
-                        xField.setText("");
-                        xField.setEnabled(false);
-                        yField.setText("");
-                        yField.setEnabled(false);
-                        massField.setText("");
-                        massField.setEnabled(false);
-                        radixField.setText("");
-                        radixField.setEnabled(false);
-                        addPlanet.setEnabled(false);
-                        removePlanet.setEnabled(false);
-                    }
-                } catch(java.lang.IllegalStateException ex) {
-                }
-            }
-        });
-
-        this.integratorBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                modul.setIntegrator((Integratoren) ((JComboBox) e.getSource()).getSelectedItem());
-            }
+        this.integratorBox.addActionListener((ActionEvent e) -> {
+            modul.setIntegrator((Integratoren) ((JComboBox) e.getSource()).getSelectedItem());
         });
 
         this.deltatField.addFocusListener(new FocusAdapter() {
@@ -728,144 +678,117 @@ public class View implements Observer, Runnable {
             }
         });
 
-        this.debugMode.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                debug = !debug;
-            }
+        this.debugMode.addActionListener((ActionEvent e) -> {
+            debug = !debug;
         });
 
-        this.addPlanet.addActionListener(new ActionListener() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                String error = "",
-                       label,
-                       temp;
-
-                Vektor2D coords = new Vektor2D(),
-                         v = new Vektor2D();
-                double mass = 0,
-                       radix = 0;
-
-                label = labelField.getText().trim();
-
-                temp = xField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        coords.setX(Double.parseDouble(temp));
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the x coordinate is not valid.\n";
-                    }
-                }
-
-                temp = yField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        coords.setY(Double.parseDouble(temp));
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the y coordinate is not valid.\n";
-                    }
-                }
-
-                temp = massField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        mass = Double.parseDouble(temp);
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the mass is not valid.\n";
-                    }
-                }
-
-                temp = radixField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        radix = Double.parseDouble(temp);
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the radix is not valid.\n";
-                    }
-                }
-
-                temp = vxField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        v.setX(Double.parseDouble(temp));
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the x component of v is not valid.\n";
-                    }
-                }
-
-                temp = vyField.getText().trim();
-                if(!temp.isEmpty()) {
-                    try {
-                        v.setY(Double.parseDouble(temp));
-                    } catch(NumberFormatException ex) {
-                        error += "The value \"" + temp + " \" for the y component of v is not valid.\n";
-                    }
-                }
-
-                if(error.isEmpty()) {
-                    Color c = new Color( (int)(Math.random() * 255), (int)(Math.random() * 255), (int)(Math.random() * 255));
-                    startPlanets.add(new Planet(label, coords, mass, radix, v, c));
-                    planets = (ArrayList<Planet>) startPlanets.clone();
-                    planetsBox.addItem(label);
-                    planetsBox.setSelectedIndex(planetsBox.getItemCount() - 1);
-                } else {
-                    showErrorDialog("Invalid Component values", error);
+        this.addPlanet.addActionListener((ActionEvent e) -> {
+            String error = "",
+                    label,
+                    temp;
+            Vektor2D coords = new Vektor2D(),
+                    v = new Vektor2D();
+            double mass = 0,
+                    radix = 0;
+            label = labelField.getText().trim();
+            temp = xField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    coords.setX(Double.parseDouble(temp));
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the x coordinate is not valid.\n";
                 }
             }
-        });
-
-        this.removePlanet.addActionListener(new ActionListener() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                int index = planetsBox.getSelectedIndex() - 2;
-
-                planetsBox.setSelectedIndex(0);
-
-                startPlanets.remove(index);
+            temp = yField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    coords.setY(Double.parseDouble(temp));
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the y coordinate is not valid.\n";
+                }
+            }
+            temp = massField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    mass = Double.parseDouble(temp);
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the mass is not valid.\n";
+                }
+            }
+            temp = radixField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    radix = Double.parseDouble(temp);
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the radix is not valid.\n";
+                }
+            }
+            temp = vxField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    v.setX(Double.parseDouble(temp));
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the x component of v is not valid.\n";
+                }
+            }
+            temp = vyField.getText().trim();
+            if(!temp.isEmpty()) {
+                try {
+                    v.setY(Double.parseDouble(temp));
+                } catch(NumberFormatException ex) {
+                    error += "The value \"" + temp + " \" for the y component of v is not valid.\n";
+                }
+            }
+            if(error.isEmpty()) {
+                Color c = new Color( (int)(Math.random() * 255), (int)(Math.random() * 255), (int)(Math.random() * 255));
+                startPlanets.add(new Planet(label, coords, mass, radix, v, c));
                 planets = (ArrayList<Planet>) startPlanets.clone();
-                updateComboBoxes();
+                planetsBox.addItem(label);
+                planetsBox.setSelectedIndex(planetsBox.getItemCount() - 1);
+            } else {
+                showErrorDialog("Invalid Component values", error);
             }
         });
 
-        this.removeAllPlanets.addActionListener(new ActionListener() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                startPlanets = new ArrayList<>();
-                planets = (ArrayList<Planet>) startPlanets.clone();
+        this.removePlanet.addActionListener((ActionEvent e) -> {
+            int index = planetsBox.getSelectedIndex() - 2;
+            
+            planetsBox.setSelectedIndex(0);
+            
+            startPlanets.remove(index);
+            planets = (ArrayList<Planet>) startPlanets.clone();
+            updateComboBoxes();
+        });
 
-                planetsBox.removeAllItems();
-                planetsBox.addItem(standardBoxEntry);
-                planetsBox.addItem(newPlanetBoxEntry);
-                planetsBox.setSelectedIndex(0);
-            }
+        this.removeAllPlanets.addActionListener((ActionEvent e) -> {
+            startPlanets = new ArrayList<>();
+            planets = (ArrayList<Planet>) startPlanets.clone();
+            
+            planetsBox.removeAllItems();
+            planetsBox.addItem(standardBoxEntry);
+            planetsBox.addItem(newPlanetBoxEntry);
+            planetsBox.setSelectedIndex(0);
         });
     }
 
     private void addPlanetsUIListeners() {
-        this.labelField.addCaretListener(new CaretListener() {
-            @Override
-            public void caretUpdate(CaretEvent e) {
-                if(isAddingNewPlanet) {
-                    return;
-                }
-                String currentValue = labelField.getText();
-                int i = planetsBox.getSelectedIndex();
-                if(i < 2) {
-                    return;
-                }
-                Planet temp = startPlanets.get(i - 2);
-
-                temp.setLabel(currentValue);
-                planetsBox.insertItemAt(currentValue, i);
-                planetsBox.removeItemAt(i + 1);
-                planetsBox.setSelectedIndex(i);
-                planetsBox.repaint();
-                startPlanets.set(i - 2, temp);
+        this.labelField.addCaretListener((CaretEvent e) -> {
+            if(isAddingNewPlanet) {
+                return;
             }
+            String currentValue = labelField.getText();
+            int i = planetsBox.getSelectedIndex();
+            if(i < 2) {
+                return;
+            }
+            Planet temp = startPlanets.get(i - 2);
+            
+            temp.setLabel(currentValue);
+            planetsBox.insertItemAt(currentValue, i);
+            planetsBox.removeItemAt(i + 1);
+            planetsBox.setSelectedIndex(i);
+            planetsBox.repaint();
+            startPlanets.set(i - 2, temp);
         });
 
         this.vxField.addFocusListener(new FocusAdapter() {
@@ -1110,12 +1033,13 @@ public class View implements Observer, Runnable {
     }
     
     private void initOpenGL() {
-        //glfwSetErrorCallback(errorCallback = errorCallbackPrint(System.err));
-        
         if (glfwInit() != GL11.GL_TRUE)
             throw new IllegalStateException("Unable to initialize GLFW");
         
-        window = glfwCreateWindow(800, 800, "Hello World!", 0, 0);
+        IntBuffer w = BufferUtils.createIntBuffer(1);
+        IntBuffer h = BufferUtils.createIntBuffer(1);
+        
+        window = glfwCreateWindow(800, 640, "Hello World!", 0, 0);
         if ( window == 0 ) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
@@ -1124,6 +1048,8 @@ public class View implements Observer, Runnable {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
+        
+        glfwSetErrorCallback(errorCallback = errorCallbackPrint(System.err));
         
         glfwSetKeyCallback(window, keyCallback = new GLFWKeyCallback() {
             @Override
