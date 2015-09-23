@@ -1033,13 +1033,11 @@ public class View implements Observer, Runnable {
     }
     
     private void initOpenGL() {
-        if (glfwInit() != GL11.GL_TRUE)
+        if (glfwInit() != GL11.GL_TRUE) {
             throw new IllegalStateException("Unable to initialize GLFW");
+        }
         
-        IntBuffer w = BufferUtils.createIntBuffer(1);
-        IntBuffer h = BufferUtils.createIntBuffer(1);
-        
-        window = glfwCreateWindow(800, 640, "Hello World!", 0, 0);
+        window = glfwCreateWindow(800, 640, this.title, 0, 0);
         if ( window == 0 ) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
