@@ -74,6 +74,7 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import mss.gui.GLButton;
 import mss.integratoren.Integratoren;
 import mss.integratoren.Rechenmodul;
 import mss.util.DataFileSaver;
@@ -958,9 +959,11 @@ public class View implements Observer, Runnable {
         
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         
+        GLButton test = new GLButton(200, 200);
+        
         while ( glfwWindowShouldClose(window) == GL_FALSE ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
- 
+            test.draw();
             glfwSwapBuffers(window); // swap the color buffers
  
             // Poll for window events. The key callback above will only be
@@ -1365,7 +1368,11 @@ public class View implements Observer, Runnable {
             this.buffer.put(10, 1.0 / -this.zoomLevel);
         }
         if(shouldReInit) {
-            this.initOpenGL();
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            glLoadMatrixd(this.buffer);
+            GL11.glOrtho(-100, 100, -100, 100, 1, -1);
+
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
         }
     }
 
