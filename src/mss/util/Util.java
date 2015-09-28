@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import mss.integratoren.Integratoren;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.util.Color;
 
 /**
@@ -154,5 +155,9 @@ public class Util {
         }
 
         return collisions;
+    }
+    
+    public static int createVBOID() {
+        return GL15.glGenBuffers();
     }
 }
